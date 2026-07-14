@@ -1,0 +1,44 @@
+{
+  "name": "tokentopper",
+  "version": "0.1.0",
+  "description": "Score your Claude Code usage into a Fancy AI Usage Index and see where you rank among the Token Masters. Reads local usage, exports a tamper-evident signed.json.",
+  "type": "module",
+  "bin": {
+    "tokentopper": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --target node18 --clean",
+    "dev": "node --experimental-strip-types src/cli.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "tokens",
+    "usage",
+    "ai",
+    "leaderboard",
+    "tokenmaxxing",
+    "openfactoryai"
+  ],
+  "homepage": "https://openfactoryai.com/tools/tokentopper/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kalmantic/tokentopper.git"
+  },
+  "author": "Kalmantic",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.5.0"
+  }
+}

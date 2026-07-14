@@ -1,7 +1,7 @@
 {
   "name": "tokentopper",
-  "version": "0.1.0",
-  "description": "Score your Claude Code usage into a Fancy AI Usage Index and see where you rank among the Token Masters. Reads local usage, exports a tamper-evident signed.json.",
+  "version": "0.1.1",
+  "description": "How much are you really shipping with AI? tokentopper reads your local Claude Code usage, scores a Fancy AI Usage Index, tells you your tier on the tokenmaxxing ladder (are you on the 2027 curve of 5-25B tokens/yr?), and exports a tamper-evident, ed25519-signed signed.json for the openfactoryai.com/tools/tokentopper leaderboard. Private by default; only counts, models, and dates ever leave your machine, never prompts or code.",
   "type": "module",
   "bin": {
     "tokentopper": "dist/cli.js"
@@ -22,11 +22,18 @@
   "keywords": [
     "claude",
     "claude-code",
+    "anthropic",
     "tokens",
+    "token-usage",
     "usage",
+    "cost",
     "ai",
+    "llm",
     "leaderboard",
     "tokenmaxxing",
+    "ccusage",
+    "analytics",
+    "cli",
     "openfactoryai"
   ],
   "homepage": "https://openfactoryai.com/tools/tokentopper/",

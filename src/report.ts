@@ -1,4 +1,6 @@
+import { hostname, platform } from "node:os";
 import { costUSD } from "./pricing";
+import { machineId } from "./sign";
 import type { Rec } from "./usage";
 
 // The eight rungs of the ladder, by annualized token run-rate.
@@ -49,7 +51,9 @@ export interface Aggregate {
   index: number;
   tier: string;
   byModel: Record<string, { tokens: number; costUSD: number; requests: number }>;
+  byTool: Record<string, { tokens: number; costUSD: number; requests: number }>;
   byDay: Record<string, { tokens: number; costUSD: number }>;
+  machine: { id: string; hostname: string; os: string };
 }
 
 const DAY_MS = 86_400_000;
@@ -68,6 +72,7 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
     webFetches: 0,
   };
   const byModel: Aggregate["byModel"] = {};
+  const byTool: Aggregate["byTool"] = {};
   const byDay: Aggregate["byDay"] = {};
   const sessions = new Set<string>();
   let minTs = Infinity;
@@ -82,7 +87,7 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
 
   for (const r of recs) {
     const tokens = r.input + r.output + r.cacheWrite + r.cacheRead;
-    const cost = costUSD(r.model, {
+    const cost = costUSD(r.provider, r.model, {
       input: r.input,
       output: r.output,
       cacheWrite: r.cacheWrite,
@@ -104,6 +109,11 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
     m.tokens += tokens;
     m.costUSD += cost;
     m.requests += 1;
+
+    const tl = (byTool[r.tool] ??= { tokens: 0, costUSD: 0, requests: 0 });
+    tl.tokens += tokens;
+    tl.costUSD += cost;
+    tl.requests += 1;
 
     if (r.day) {
       const d = (byDay[r.day] ??= { tokens: 0, costUSD: 0 });
@@ -134,6 +144,7 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
   const costPerYear = round2((trailing30Cost / basisDays) * 365);
 
   for (const k of Object.keys(byModel)) byModel[k]!.costUSD = round2(byModel[k]!.costUSD);
+  for (const k of Object.keys(byTool)) byTool[k]!.costUSD = round2(byTool[k]!.costUSD);
   for (const k of Object.keys(byDay)) byDay[k]!.costUSD = round2(byDay[k]!.costUSD);
 
   return {
@@ -146,7 +157,9 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
     index: indexFor(tokensPerYear),
     tier: tierFor(tokensPerYear),
     byModel,
+    byTool,
     byDay,
+    machine: { id: machineId(), hostname: hostname(), os: platform() },
   };
 }
 

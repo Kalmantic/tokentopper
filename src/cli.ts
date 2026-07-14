@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { findFiles, loadRecords } from "./usage";
+import { collectAll } from "./usage";
 import { aggregate, TIERS, type Aggregate } from "./report";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
@@ -40,18 +40,16 @@ function fmtUSD(n: number): string {
 }
 
 function build(): Aggregate | null {
-  const files = findFiles();
-  if (files.length === 0) return null;
-  const recs = loadRecords(files);
+  const recs = collectAll();
   if (recs.length === 0) return null;
   return aggregate(recs, VERSION, Date.now());
 }
 
 function noData(): never {
   console.error(
-    "No Claude Code usage found.\n" +
-      dim("Looked in ~/.claude/projects and ~/.config/claude/projects (and $CLAUDE_CONFIG_DIR).\n") +
-      dim("Use Claude Code for a bit, then run this again."),
+    "No AI CLI usage found.\n" +
+      dim("Looked for Claude Code (~/.claude/projects) and Codex (~/.codex/sessions).\n") +
+      dim("Use a coding agent for a bit, then run this again."),
   );
   process.exit(1);
 }
@@ -70,6 +68,14 @@ function summary(agg: Aggregate): void {
   console.log(`  All-time      ${fmtTokens(agg.totals.tokens)} tokens   ${fmtUSD(agg.totals.costUSD)}   ${dim(agg.totals.requests + " requests, " + agg.totals.sessions + " sessions")}`);
   console.log(`  Window        ${dim((agg.window.from.slice(0, 10) || "?") + " → " + (agg.window.to.slice(0, 10) || "?") + " · " + agg.window.activeDays + " active days")}`);
   console.log(`  Tools         ${dim(agg.totals.webSearches + " web searches, " + agg.totals.webFetches + " web fetches")}`);
+  const tools = Object.entries(agg.byTool).sort((a, b) => b[1].tokens - a[1].tokens);
+  if (tools.length > 1) {
+    console.log("");
+    console.log(`  ${dim("By tool")}`);
+    for (const [t, v] of tools) {
+      console.log(`    ${t.padEnd(22)} ${fmtTokens(v.tokens).padStart(8)}   ${fmtUSD(v.costUSD)}`);
+    }
+  }
   if (models.length) {
     console.log("");
     console.log(`  ${dim("By model")}`);

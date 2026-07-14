@@ -81,7 +81,7 @@ function summary(agg: Aggregate): void {
   const next = TIERS[idx + 1];
   console.log("");
   if (next && Number.isFinite(next.max)) {
-    console.log(`  ${dim("Next rung:")} ${next.name} at ${fmtTokens(TIERS[idx]!.max)}/yr. ${dim("The 2027 curve is 5B–25B/yr.")}`);
+    console.log(`  ${dim("Next rung:")} ${next.name} at ${fmtTokens(TIERS[idx]!.max)}/yr. ${dim("Trailblazer starts at 5B/month (60B/yr).")}`);
   }
   console.log(`  ${dim("Publish your rank:")} tokentopper export ${dim("→ signed.json, then upload at")} ${SITE}`);
   console.log("");

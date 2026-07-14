@@ -1,6 +1,6 @@
 {
   "name": "tokentopper",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "How much are you really shipping with AI? tokentopper reads your local Claude Code usage, scores a Fancy AI Usage Index, tells you your tier on the tokenmaxxing ladder (are you on the 2027 curve of 5-25B tokens/yr?), and exports a tamper-evident, ed25519-signed signed.json for the openfactoryai.com/tools/tokentopper leaderboard. Private by default; only counts, models, and dates ever leave your machine, never prompts or code.",
   "type": "module",
   "bin": {

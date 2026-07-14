@@ -2,14 +2,15 @@ import { costUSD } from "./pricing";
 import type { Rec } from "./usage";
 
 // The eight rungs of the ladder, by annualized token run-rate.
+// Anchors: Trailblazer = 5B/month (60B/yr), Titan > 100B/yr, Legend > 250B/yr.
 export const TIERS: { name: string; max: number }[] = [
-  { name: "Curious", max: 10e6 },
-  { name: "Tinkerer", max: 50e6 },
-  { name: "Operator", max: 250e6 },
-  { name: "Builder", max: 1e9 },
-  { name: "Accelerant", max: 5e9 },
-  { name: "Trailblazer", max: 25e9 },
-  { name: "Titan", max: 100e9 },
+  { name: "Curious", max: 1e9 },
+  { name: "Tinkerer", max: 5e9 },
+  { name: "Operator", max: 15e9 },
+  { name: "Builder", max: 30e9 },
+  { name: "Accelerant", max: 60e9 },
+  { name: "Trailblazer", max: 100e9 },
+  { name: "Titan", max: 250e9 },
   { name: "Legend", max: Infinity },
 ];
 
@@ -18,11 +19,11 @@ export function tierFor(annualTokens: number): string {
   return "Legend";
 }
 
-// Fancy AI Usage Index: a local 0..100 estimate, log-scaled from 1M/yr (0) to
-// 100B/yr (100). The authoritative, rank-relative Index is computed server-side.
+// Fancy AI Usage Index: a local 0..100 estimate, log-scaled from 100M/yr (0) to
+// 250B/yr (100). The authoritative, rank-relative Index is computed server-side.
 export function indexFor(annualTokens: number): number {
-  const lo = Math.log10(1e6);
-  const hi = Math.log10(1e11);
+  const lo = Math.log10(1e8);
+  const hi = Math.log10(250e9);
   const v = Math.log10(Math.max(1, annualTokens));
   return Math.round(Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)) * 10) / 10;
 }

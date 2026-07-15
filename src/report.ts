@@ -149,9 +149,15 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
   const to = Number.isFinite(maxTs) ? new Date(maxTs).toISOString() : "";
   const spanDays = Number.isFinite(minTs) && Number.isFinite(maxTs) ? Math.max(1, Math.round((maxTs - minTs) / DAY_MS) + 1) : 0;
 
-  const GROWTH = 1.2;
-  const tokensPerYear = Math.round(Math.max(curMonthTokens, lastMonthTokens) * 12 * GROWTH);
-  const costPerYear = round2(Math.max(curMonthCost, lastMonthCost) * 12 * GROWTH);
+  // Per-day rate over the observed period, annualized with 30% expected growth.
+  const GROWTH = 1.3;
+  const days = Math.max(1, spanDays);
+  const tokensPerYear = Math.round((totals.tokens / days) * 365 * GROWTH);
+  const costPerYear = round2((totals.costUSD / days) * 365 * GROWTH);
+  void curMonthTokens;
+  void curMonthCost;
+  void lastMonthTokens;
+  void lastMonthCost;
 
   for (const k of Object.keys(byModel)) byModel[k]!.costUSD = round2(byModel[k]!.costUSD);
   for (const k of Object.keys(byTool)) byTool[k]!.costUSD = round2(byTool[k]!.costUSD);
@@ -163,7 +169,7 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
     tool: { name: "tokentopper", version },
     window: { from, to, spanDays, activeDays: Object.keys(byDay).length },
     totals,
-    runRate: { tokensPerYear, costPerYear, basis: "max(this, last month) x12 x1.2" },
+    runRate: { tokensPerYear, costPerYear, basis: `${days}d observed x365 x1.3` },
     index: indexFor(tokensPerYear),
     tier: tierFor(tokensPerYear),
     byModel,

@@ -47,7 +47,7 @@ export interface Aggregate {
     webSearches: number;
     webFetches: number;
   };
-  runRate: { tokensPerYear: number; costPerYear: number; basisDays: number };
+  runRate: { tokensPerYear: number; costPerYear: number; basis: string };
   index: number;
   tier: string;
   byModel: Record<string, { tokens: number; costUSD: number; requests: number }>;
@@ -78,12 +78,18 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
   let minTs = Infinity;
   let maxTs = -Infinity;
 
-  // trailing-30-day window for the run-rate projection
-  const times = recs.map((r) => Date.parse(r.ts)).filter((t) => !Number.isNaN(t));
-  const latest = times.length ? Math.max(...times) : now;
-  const cutoff = latest - 30 * DAY_MS;
-  let trailing30Tokens = 0;
-  let trailing30Cost = 0;
+  // Run-rate = the stronger of this month and last month, annualized with a
+  // modest growth factor, so a partial or quiet month never understates you.
+  const d0 = new Date(now);
+  const ym = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
+  const curYM = ym(d0.getUTCFullYear(), d0.getUTCMonth());
+  const prevY = d0.getUTCMonth() === 0 ? d0.getUTCFullYear() - 1 : d0.getUTCFullYear();
+  const prevM = d0.getUTCMonth() === 0 ? 11 : d0.getUTCMonth() - 1;
+  const lastYM = ym(prevY, prevM);
+  let curMonthTokens = 0;
+  let curMonthCost = 0;
+  let lastMonthTokens = 0;
+  let lastMonthCost = 0;
 
   for (const r of recs) {
     const tokens = r.input + r.output + r.cacheWrite + r.cacheRead;
@@ -125,10 +131,14 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
     if (!Number.isNaN(t)) {
       if (t < minTs) minTs = t;
       if (t > maxTs) maxTs = t;
-      if (t >= cutoff) {
-        trailing30Tokens += tokens;
-        trailing30Cost += cost;
-      }
+    }
+    const mo = r.day.slice(0, 7);
+    if (mo === curYM) {
+      curMonthTokens += tokens;
+      curMonthCost += cost;
+    } else if (mo === lastYM) {
+      lastMonthTokens += tokens;
+      lastMonthCost += cost;
     }
   }
 
@@ -139,9 +149,9 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
   const to = Number.isFinite(maxTs) ? new Date(maxTs).toISOString() : "";
   const spanDays = Number.isFinite(minTs) && Number.isFinite(maxTs) ? Math.max(1, Math.round((maxTs - minTs) / DAY_MS) + 1) : 0;
 
-  const basisDays = 30;
-  const tokensPerYear = Math.round((trailing30Tokens / basisDays) * 365);
-  const costPerYear = round2((trailing30Cost / basisDays) * 365);
+  const GROWTH = 1.2;
+  const tokensPerYear = Math.round(Math.max(curMonthTokens, lastMonthTokens) * 12 * GROWTH);
+  const costPerYear = round2(Math.max(curMonthCost, lastMonthCost) * 12 * GROWTH);
 
   for (const k of Object.keys(byModel)) byModel[k]!.costUSD = round2(byModel[k]!.costUSD);
   for (const k of Object.keys(byTool)) byTool[k]!.costUSD = round2(byTool[k]!.costUSD);
@@ -153,7 +163,7 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
     tool: { name: "tokentopper", version },
     window: { from, to, spanDays, activeDays: Object.keys(byDay).length },
     totals,
-    runRate: { tokensPerYear, costPerYear, basisDays },
+    runRate: { tokensPerYear, costPerYear, basis: "max(this, last month) x12 x1.2" },
     index: indexFor(tokensPerYear),
     tier: tierFor(tokensPerYear),
     byModel,

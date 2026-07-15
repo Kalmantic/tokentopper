@@ -62,7 +62,7 @@ function summary(agg: Aggregate): void {
   console.log("");
   console.log(`  ${bold("TokenTopper")} ${dim("· the tokenmaxxing index")}`);
   console.log("");
-  console.log(`  Run-rate      ${bold(green(fmtTokens(rr) + " tokens/yr"))}   ${dim("(" + fmtUSD(agg.runRate.costPerYear) + "/yr, from last 30 days)")}`);
+  console.log(`  Run-rate      ${bold(green(fmtTokens(rr) + " tokens/yr"))}   ${dim("(" + fmtUSD(agg.runRate.costPerYear) + "/yr · " + agg.runRate.basis + ")")}`);
   console.log(`  Tier          ${bold(agg.tier)}   ${dim("· Index " + agg.index + "/100 (local estimate)")}`);
   console.log("");
   console.log(`  All-time      ${fmtTokens(agg.totals.tokens)} tokens   ${fmtUSD(agg.totals.costUSD)}   ${dim(agg.totals.requests + " requests, " + agg.totals.sessions + " sessions")}`);

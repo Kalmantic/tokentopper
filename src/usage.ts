@@ -123,10 +123,34 @@ function tsFromRollout(name: string): string {
   return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`;
 }
 
+interface CodexUsage {
+  input_tokens?: number;
+  cached_input_tokens?: number;
+  output_tokens?: number;
+  reasoning_output_tokens?: number;
+  total_tokens?: number;
+}
+function sub(a: CodexUsage, b: CodexUsage | null): CodexUsage {
+  const p = b ?? {};
+  return {
+    input_tokens: (a.input_tokens ?? 0) - (p.input_tokens ?? 0),
+    cached_input_tokens: (a.cached_input_tokens ?? 0) - (p.cached_input_tokens ?? 0),
+    output_tokens: (a.output_tokens ?? 0) - (p.output_tokens ?? 0),
+    reasoning_output_tokens: (a.reasoning_output_tokens ?? 0) - (p.reasoning_output_tokens ?? 0),
+    total_tokens: (a.total_tokens ?? 0) - (p.total_tokens ?? 0),
+  };
+}
+
+// Mirrors ccusage's Codex reader: per token_count event use last_token_usage
+// (or total-minus-previous), globally dedup identical events, and — for forked/
+// resumed sessions (a "forked_from_id" or "thread.spawn" marker) — skip the
+// replayed parent history, whose events all carry the fork-creation second.
 function loadCodex(): Rec[] {
   const files: string[] = [];
   for (const root of codexRoots()) walk(root, (n) => n.startsWith("rollout-") && n.endsWith(".jsonl"), files);
+  files.sort();
   const recs: Rec[] = [];
+  const seen = new Set<string>();
   for (const file of files) {
     let text: string;
     try {
@@ -134,33 +158,65 @@ function loadCodex(): Rec[] {
     } catch {
       continue;
     }
-    let best: Record<string, number> | null = null;
-    let model = "gpt-5-codex";
-    let modelFound = false;
-    for (const line of text.split("\n")) {
-      if (!line) continue;
-      if (line.includes("total_token_usage")) {
+    const head = text.slice(0, 16384);
+    const isReplay = head.includes("forked_from_id") || head.includes("thread.spawn");
+    const lines = text.split("\n");
+
+    let replaySec: string | null = null;
+    if (isReplay) {
+      for (const line of lines) {
+        if (!line.includes('"token_count"')) continue;
         try {
           const o = JSON.parse(line);
-          const info = o?.payload?.info?.total_token_usage;
-          if (info && typeof info.total_tokens === "number") best = info; // cumulative → keep last
+          if (o?.type === "event_msg" && o?.payload?.type === "token_count" && typeof o.timestamp === "string") {
+            replaySec = o.timestamp.slice(0, 19);
+            break;
+          }
         } catch {
           /* ignore */
         }
       }
-      if (!modelFound && line.includes('"model"')) {
-        const m = line.match(/"model"\s*:\s*"([^"]+)"/);
-        if (m) {
-          model = m[1]!;
-          modelFound = true;
-        }
-      }
     }
-    if (best) {
-      const cacheRead = best.cached_input_tokens || 0;
-      const input = Math.max(0, (best.input_tokens || 0) - cacheRead);
-      const output = (best.output_tokens || 0) + (best.reasoning_output_tokens || 0);
-      const ts = tsFromRollout(basename(file));
+
+    let skip = isReplay && replaySec != null;
+    let prev: CodexUsage | null = null;
+    let model = "gpt-5-codex";
+    for (const line of lines) {
+      if (!line.includes('"token_count"')) {
+        if (line.includes('"model"')) {
+          const m = line.match(/"model"\s*:\s*"([^"]+)"/);
+          if (m) model = m[1]!;
+        }
+        continue;
+      }
+      let o: { type?: string; timestamp?: string; payload?: { type?: string; info?: { last_token_usage?: CodexUsage; total_token_usage?: CodexUsage } } };
+      try {
+        o = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (o.type !== "event_msg" || o.payload?.type !== "token_count") continue;
+      const ts = o.timestamp ?? "";
+      const info = o.payload.info ?? {};
+      const total = info.total_token_usage ?? null;
+      if (skip && ts && ts.slice(0, 19) === replaySec) {
+        if (total) prev = total;
+        continue;
+      }
+      skip = false;
+      const raw: CodexUsage | null = info.last_token_usage ?? (total ? sub(total, prev) : null);
+      if (total) prev = total;
+      if (!raw) continue;
+      const it = raw.input_tokens ?? 0;
+      const rawCached = raw.cached_input_tokens ?? 0;
+      const ot = raw.output_tokens ?? 0;
+      const rt = raw.reasoning_output_tokens ?? 0;
+      const tt = raw.total_tokens ?? 0;
+      if (it === 0 && rawCached === 0 && ot === 0 && rt === 0) continue;
+      const key = `${ts}|${it}|${rawCached}|${ot}|${rt}|${tt}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const cacheRead = Math.min(rawCached, it);
       recs.push({
         ts,
         day: ts.slice(0, 10),
@@ -168,8 +224,8 @@ function loadCodex(): Rec[] {
         provider: "openai",
         model,
         sessionId: basename(file),
-        input,
-        output,
+        input: Math.max(0, it - cacheRead),
+        output: ot + rt,
         cacheWrite: 0,
         cacheRead,
         webSearch: 0,

@@ -1,7 +1,7 @@
 {
   "name": "tokentopper",
   "version": "0.2.4",
-  "description": "Measure how much you actually use Claude Code and Codex. tokentopper reads your local coding-agent usage, scores your Professional AI Index, shows your run-rate and your tier on the 2027 curve (the 8-tier tokenmaxxing ladder, Curious to Legend), and exports a tamper-evident, ed25519-signed signed.json to claim a verified, shareable rank at openfactoryai.com/tools/tokentopper. Claude & Codex today, multi-terminal coming soon. Private by default; only token counts, models, and dates leave your machine, never your prompts or code.",
+  "description": "Measure how much you actually use Claude Code and Codex. tokentopper reads your local coding-agent usage, scores your Professional AI Index, shows your run-rate and your tier on the 2027 curve (the 8-tier tokenmaxxing ladder, Curious to Legend), and exports a tamper-evident, ed25519-signed signed.json to claim a verified, shareable rank at openfactoryai.com/tools/tokentopper. Supports Claude Code and Codex today; OpenCode and more terminals are on the roadmap. Private by default; only token counts, models, and dates leave your machine, never your prompts or code.",
   "type": "module",
   "bin": {
     "tokentopper": "dist/cli.js"
@@ -22,7 +22,10 @@
   "keywords": [
     "claude",
     "claude-code",
+    "codex",
+    "opencode",
     "anthropic",
+    "openai",
     "tokens",
     "token-usage",
     "usage",

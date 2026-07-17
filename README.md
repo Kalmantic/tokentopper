@@ -4,7 +4,6 @@ Measure how much you actually use **Claude Code** and **Codex**. tokentopper sco
 your **Professional AI Index**, shows your run-rate and your tier on the 2027 curve,
 and ranks you among the Token Masters at
 [openfactoryai.com/tools/tokentopper](https://openfactoryai.com/tools/tokentopper/).
-**Claude & Codex today — multi-terminal coming soon.**
 
 ```sh
 npx tokentopper@latest            # your run-rate, tier, and Index
@@ -12,13 +11,25 @@ npx tokentopper@latest export     # write a signed.json to upload
 npx tokentopper@latest sync       # sign and push it automatically
 ```
 
+## Supported terminals
+
+| Terminal | Status |
+| --- | --- |
+| **Claude Code** | ✅ Supported |
+| **Codex** | ✅ Supported |
+| **OpenCode** | 🛣️ On the roadmap |
+| Gemini CLI, GitHub Copilot & more | 🛣️ On the roadmap |
+
+**Claude Code and Codex today — OpenCode is next, with other terminals to follow.**
+One index across every coding agent you use.
+
 ## What it reads
 
 Your local **Claude Code** transcripts in `~/.claude/projects` (and
 `~/.config/claude/projects`, or `$CLAUDE_CONFIG_DIR`) and your **Codex** sessions in
 `~/.codex/sessions`. It counts tokens (input, output, cache write, cache read),
 attributes cost per model, and derives your run-rate, active days, sessions, and
-tool calls. Support for more terminals is coming soon.
+tool calls. **OpenCode and more terminals are on the roadmap.**
 
 **It never reads prompt or response content, file paths, or branch names.** Only
 aggregate counts, model names, and dates are computed, and nothing leaves your

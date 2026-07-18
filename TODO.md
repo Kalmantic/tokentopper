@@ -9,7 +9,7 @@ Goal: make TokenTopper easy to install, safe to publish, and verifiably usable o
 - [x] Document Claude Code and Codex as supported today.
 - [x] Document OpenCode and other AI coding tools as roadmap items.
 - [ ] Revoke every npm access token exposed during the `0.2.4`/`0.2.5` release and create no replacement long-lived publishing token.
-- [ ] Commit and push the `0.2.5` package metadata, README, lockfile, and CLI help changes currently in the working tree.
+- [x] Commit and push the `0.2.5` package metadata, README, lockfile, and CLI help changes on `agent/tokentopper-distro`.
 
 ## P0: make every package verifiable
 
@@ -26,12 +26,12 @@ Exit condition: `npm run check` proves the exact tarball intended for publicatio
 ## P1: continuous integration
 
 - [x] Add GitHub Actions CI for pull requests and `main`.
-- [ ] Run checks on Linux, macOS, and Windows across the supported Node versions.
+- [x] Run checks on Linux, macOS, and Windows across the supported Node versions.
 - [x] Cache npm dependencies without caching build output.
 - [x] Upload the dry-run tarball as a CI artifact for inspection.
 - [x] Add dependency review and least-privilege workflow permissions.
-- [ ] Enable GitHub secret scanning and push protection in repository settings.
-- [ ] Protect `main` so the required checks must pass before merge.
+- [x] Enable GitHub secret scanning and push protection in repository settings.
+- [x] Protect `main` so the required checks must pass before merge.
 
 Exit condition: a clean checkout passes build, tests, and packed-binary smoke tests on all supported platforms.
 
@@ -39,6 +39,7 @@ Exit condition: a clean checkout passes build, tests, and packed-binary smoke te
 
 - [x] Add a GitHub Actions npm trusted-publishing job using OIDC instead of reusable npm publish tokens.
 - [ ] Register `.github/workflows/release.yml` as the trusted publisher in npm package settings.
+- [ ] Allow GitHub Actions to create PRs at the Kalmantic organization level or add a repository-scoped `RELEASE_PLEASE_TOKEN` so Release Please can operate.
 - [x] Require npm provenance for every automated release.
 - [x] Use Release Please for this single-package repository; reconsider Changesets only if it becomes a monorepo.
 - [x] Generate release notes and a changelog from merged Conventional Commits.

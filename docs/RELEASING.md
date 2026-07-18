@@ -12,11 +12,15 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
    - environment: `npm`
    - permission: `npm publish`
 3. In GitHub, create an environment named `npm`. Add required reviewers if releases should require a human approval at the final publish boundary.
-4. In GitHub Actions settings, allow GitHub Actions to create pull requests so Release Please can maintain its release PR.
+4. Allow Release Please to maintain its release PR using one of these approaches:
+   - preferred: have a Kalmantic organization owner allow GitHub Actions to create pull requests;
+   - fallback: create a fine-grained GitHub token limited to `Kalmantic/tokentopper` with Contents and Pull requests read/write access, then save it as the repository Actions secret `RELEASE_PLEASE_TOKEN`.
+   The current Kalmantic organization policy blocks the built-in GitHub token, so one of these actions is required before merging the distribution PR.
 5. Protect `main` and require the CI checks before merge.
 6. Enable GitHub secret scanning and push protection for the repository.
 
 The trusted publisher identity is bound to `.github/workflows/release.yml`. Renaming that file requires updating the npm package settings before the next release.
+`RELEASE_PLEASE_TOKEN`, when needed, is a GitHub automation credential only. npm publishing never uses it and continues to authenticate through short-lived OIDC credentials.
 
 ## Normal release flow
 

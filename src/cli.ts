@@ -1,14 +1,17 @@
 #!/usr/bin/env node
-import { writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
 import { collectAll } from "./usage";
 import { aggregate, TIERS, toPublicAggregate, type Aggregate } from "./report";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
-import packageJson from "../package.json";
+import packageJson from "../package.json" with { type: "json" };
 
 const VERSION = packageJson.version;
 const SITE = "https://openfactoryai.com/tools/tokentopper/";
+const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const argv = process.argv.slice(2);
 const command = argv.find((a) => !a.startsWith("-")) ?? "summary";
@@ -40,8 +43,8 @@ function fmtUSD(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
-function build(): Aggregate | null {
-  const recs = collectAll();
+async function build(): Promise<Aggregate | null> {
+  const recs = await collectAll();
   if (recs.length === 0) return null;
   return aggregate(recs, VERSION, Date.now());
 }
@@ -127,8 +130,7 @@ async function doSync(agg: Aggregate): Promise<void> {
     console.log(dim(`Watching. Re-syncing every ${minutes} min. Ctrl-C to stop.`));
     setInterval(
       () => {
-        const fresh = build();
-        if (fresh) void push(endpoint, token, signAggregate(fresh));
+        void build().then((fresh) => { if (fresh) return push(endpoint, token, signAggregate(fresh)); });
       },
       Math.max(1, minutes) * 60_000,
     );
@@ -170,6 +172,32 @@ function doLogin(): void {
   );
 }
 
+function doSkillInstall(): void {
+  if (!argv.includes("install")) {
+    console.log("Usage: tokentopper skill install [--claude] [--codex] [--force]");
+    return;
+  }
+  const source = join(PACKAGE_ROOT, "skills", "tokentopper");
+  if (!existsSync(source)) {
+    console.error("The TokenTopper skill is missing from this package.");
+    process.exit(1);
+  }
+  const selected = has("claude") || has("codex");
+  const targets = [
+    ...(!selected || has("claude") ? [join(homedir(), ".claude", "skills", "tokentopper")] : []),
+    ...(!selected || has("codex") ? [join(process.env.CODEX_HOME || join(homedir(), ".codex"), "skills", "tokentopper")] : []),
+  ];
+  for (const target of targets) {
+    if (existsSync(target) && !has("force")) {
+      console.error(`${target} already exists. Re-run with --force to update it.`);
+      continue;
+    }
+    mkdirSync(dirname(target), { recursive: true });
+    cpSync(source, target, { recursive: true, force: has("force") });
+    console.log(`${green("✓")} Installed TokenTopper skill at ${target}`);
+  }
+}
+
 function help(): void {
   console.log(`
 ${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Index for Claude Code and Codex.
@@ -180,6 +208,7 @@ ${bold("Usage")}
   tokentopper export          Write a signed.json you can upload
   tokentopper sync            Sign and push your usage to TokenTopper
   tokentopper login           Link this machine with your CLI token
+  tokentopper skill install   Install the Agent Skill for Claude and Codex
 
 ${bold("Options")}
   --out <file>     export: output path (default signed.json)
@@ -189,11 +218,14 @@ ${bold("Options")}
   --token <token>  sync/login: your CLI token
   --watch          sync: keep running and re-sync on an interval
   --interval <min> sync --watch: minutes between syncs (default 360)
+  --claude        skill install: install only for Claude
+  --codex         skill install: install only for Codex
+  --force         skill install: replace an existing TokenTopper skill
   -v, --version    Print version
   -h, --help       Print this help
 
-Supports Claude Code and Codex today; more AI coding tools are on the roadmap.
-Reads ~/.claude/projects (and ~/.config/claude, $CLAUDE_CONFIG_DIR) and ~/.codex/sessions. Only counts,
+Supports Claude Code, Codex, and OpenCode today; more AI coding tools are on the roadmap.
+Reads ~/.claude/projects, ~/.codex/sessions, and ~/.local/share/opencode. Only counts,
 models, and days leave your machine, and only when you export or sync. Ranks at
 ${SITE}
 `);
@@ -204,8 +236,9 @@ async function main(): Promise<void> {
   if (has("help") || has("h") || command === "help") return help();
 
   if (command === "login") return doLogin();
+  if (command === "skill") return doSkillInstall();
 
-  const agg = build();
+  const agg = await build();
   if (!agg) noData();
   if (has("json")) return doJson(agg);
 

@@ -5,7 +5,7 @@
 [![CI](https://github.com/Kalmantic/tokentopper/actions/workflows/ci.yml/badge.svg)](https://github.com/Kalmantic/tokentopper/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/tokentopper)](LICENSE)
 
-**Your Professional AI Usage Index for Claude Code and Codex.** See your annual
+**Your Professional AI Usage Index for Claude Code, Codex, and OpenCode.** See your annual
 token run-rate, cost estimate, tier, and verified rank with one command.
 
 ```sh
@@ -48,9 +48,27 @@ npm install --global tokentopper
 tokentopper
 ```
 
+The same npm release runs through Bun and Deno. Deno permissions are broad because
+the CLI discovers local agent logs and can optionally write config or sync over the
+network:
+
+```sh
+bunx tokentopper@latest
+deno run -A npm:tokentopper@latest
+```
+
+Nix users can build and run the repository flake directly:
+
+```sh
+nix run github:Kalmantic/tokentopper
+```
+
+The calculation API is also prepared for JSR as `@openfactoryai/tokentopper`;
+registry publication requires the JSR scope/package to be linked to this repository.
+
 ## What it does
 
-TokenTopper is a local **Claude Code usage tracker** and **Codex token usage tracker**.
+TokenTopper is a local **Claude Code usage tracker**, **Codex token usage tracker**, and **OpenCode usage tracker**.
 It combines coding-agent usage into one comparable score:
 
 - annualized token run-rate and estimated model cost;
@@ -68,19 +86,20 @@ not a prompt tokenizer, context-window calculator, or middleware library.
 | --- | --- |
 | **Claude Code** | ✅ Supported |
 | **Codex** | ✅ Supported |
-| **OpenCode** | 🛣️ On the roadmap |
+| **OpenCode** | ✅ Supported (SQLite and JSON storage) |
 | Gemini CLI, GitHub Copilot & more | 🛣️ On the roadmap |
 
-**Claude Code and Codex are supported today. OpenCode and other AI coding tools are on the roadmap.**
+**Claude Code, Codex, and OpenCode are supported today. Other AI coding tools are on the roadmap.**
 One index across every coding agent you use.
 
 ## What it reads
 
 Your local **Claude Code** transcripts in `~/.claude/projects` (and
 `~/.config/claude/projects`, or `$CLAUDE_CONFIG_DIR`) and your **Codex** sessions in
-`~/.codex/sessions`. It counts tokens (input, output, cache write, cache read),
+`~/.codex/sessions`, plus OpenCode's `~/.local/share/opencode/opencode.db` (with
+`storage/message/**/*.json` fallback). It counts tokens (input, output, cache write, cache read),
 attributes cost per model, and derives your run-rate, active days, sessions, and
-tool calls. **OpenCode and more terminals are on the roadmap.**
+tool calls. More terminals are on the roadmap.
 
 **It never reads prompt or response content, file paths, or branch names.** Only
 aggregate counts, model names, and dates are computed, and nothing leaves your
@@ -115,6 +134,26 @@ hostname or machine identifier. Its schema is `tokentopper-summary/1`.
 | `tokentopper export [--out f] [--pretty]` | Write `signed.json` |
 | `tokentopper sync [--watch] [--interval min]` | Sign and POST to TokenTopper |
 | `tokentopper login --token <t>` | Link this machine |
+| `tokentopper skill install` | Install the TokenTopper Agent Skill for Claude and Codex |
+
+## Claude and Codex skill
+
+Install one portable, privacy-first Agent Skill into both assistants:
+
+```sh
+npx tokentopper@latest skill install
+```
+
+Use `--claude` or `--codex` for one target, and `--force` to update an existing
+installation. The skill defaults to local inspection and requires explicit consent
+before export or upload.
+
+## Multiple machines
+
+Sign in on the website, create a CLI login command, and run it on every machine you
+want in the same aggregate. Each installation is bound to its own Ed25519 signing
+key. The website lets you label devices (for example, **Work Mac**) or remove them;
+a later signed sync deliberately re-adds that installation.
 
 ## Privacy & visibility
 

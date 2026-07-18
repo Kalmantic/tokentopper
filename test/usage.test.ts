@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { loadClaude, loadCodex } from "../src/usage";
+import { DatabaseSync } from "node:sqlite";
+import { loadClaude, loadCodex, loadOpenCode } from "../src/usage";
 
 function fixtureDir(name: string): string {
   return mkdtempSync(join(tmpdir(), `tokentopper-${name}-`));
@@ -119,6 +120,61 @@ test("Codex reader handles last usage, cumulative deltas, caching, and deduplica
         { input: 30, output: 6, cacheRead: 20, model: "gpt-5.3-codex" },
       ],
     );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("OpenCode reader combines JSON and SQLite with database records winning", async () => {
+  const root = fixtureDir("opencode");
+  try {
+    const messageDir = join(root, "storage", "message", "session-1");
+    mkdirSync(messageDir, { recursive: true });
+    writeFileSync(join(messageDir, "message-1.json"), JSON.stringify({
+      id: "message-1",
+      sessionID: "session-json",
+      role: "assistant",
+      providerID: "anthropic",
+      modelID: "claude-sonnet-4",
+      time: { created: 1782986400000 },
+      tokens: { input: 10, output: 4, cache: { read: 2, write: 1 }, total: 17 },
+      cost: 0.01,
+    }));
+    writeFileSync(join(messageDir, "message-2.json"), JSON.stringify({
+      id: "message-2",
+      sessionID: "session-json",
+      role: "assistant",
+      providerID: "openai",
+      modelID: "gpt-5",
+      time: { created: 1782986460000 },
+      tokens: { input: 7, output: 3, total: 12 },
+    }));
+
+    const db = new DatabaseSync(join(root, "opencode.db"));
+    db.exec("CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT, data TEXT NOT NULL)");
+    db.prepare("INSERT INTO message (id,session_id,data) VALUES (?,?,?)").run(
+      "message-1",
+      "session-db",
+      JSON.stringify({
+        id: "message-1",
+        role: "assistant",
+        providerID: "openai",
+        modelID: "gpt-5-codex",
+        time: { created: 1782986520000 },
+        tokens: { input: 20, output: 5, cache: { read: 3, write: 2 }, total: 30 },
+        cost: 0.25,
+      }),
+    );
+    db.close();
+
+    const records = (await loadOpenCode([root])).sort((a, b) => a.model.localeCompare(b.model));
+    assert.equal(records.length, 2);
+    assert.deepEqual(records.map(({ model, sessionId, input, output, cacheRead, cacheWrite, costUSD }) => ({
+      model, sessionId, input, output, cacheRead, cacheWrite, costUSD,
+    })), [
+      { model: "gpt-5", sessionId: "session-json", input: 7, output: 5, cacheRead: 0, cacheWrite: 0, costUSD: undefined },
+      { model: "gpt-5-codex", sessionId: "session-db", input: 20, output: 5, cacheRead: 3, cacheWrite: 2, costUSD: 0.25 },
+    ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

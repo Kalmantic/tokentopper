@@ -1,0 +1,4 @@
+interface:
+  display_name: "TokenTopper"
+  short_description: "Extract and sync private AI usage"
+  default_prompt: "Use $tokentopper to extract my local coding-agent usage and upload a signed aggregate."

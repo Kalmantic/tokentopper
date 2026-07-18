@@ -1,0 +1,17 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@openfactoryai/tokentopper",
+  "version": "0.3.0",
+  "exports": {
+    ".": "./src/mod.ts",
+    "./cli": "./src/cli.ts"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "package.json",
+      "README.md",
+      "LICENSE"
+    ]
+  }
+}

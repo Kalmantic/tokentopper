@@ -104,7 +104,7 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
 
   for (const r of recs) {
     const tokens = r.input + r.output + r.cacheWrite + r.cacheRead;
-    const cost = costUSD(r.provider, r.model, {
+    const cost = r.costUSD ?? costUSD(r.provider, r.model, {
       input: r.input,
       output: r.output,
       cacheWrite: r.cacheWrite,

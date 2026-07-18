@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, basename } from "node:path";
 
@@ -7,8 +7,8 @@ import { join, basename } from "node:path";
 export interface Rec {
   ts: string;
   day: string; // YYYY-MM-DD
-  tool: "claude" | "codex"; // the CLI it came from
-  provider: "anthropic" | "openai";
+  tool: "claude" | "codex" | "opencode"; // the CLI it came from
+  provider: string;
   model: string;
   sessionId: string;
   input: number;
@@ -17,6 +17,7 @@ export interface Rec {
   cacheRead: number;
   webSearch: number;
   webFetch: number;
+  costUSD?: number;
 }
 
 function walk(dir: string, match: (name: string) => boolean, out: string[]): void {
@@ -236,23 +237,134 @@ export function loadCodex(roots = codexRoots()): Rec[] {
   return recs;
 }
 
+/* ------------------------------ OpenCode ------------------------------ */
+// OpenCode stores messages in ~/.local/share/opencode/opencode.db. Older
+// installs may use storage/message/**/*.json; SQLite wins when both contain
+// the same message ID, matching ccusage's reader.
+function openCodeRoots(): string[] {
+  const env = process.env.OPENCODE_DATA_DIR;
+  const roots = env ? env.split(",").map((d) => d.trim()).filter(Boolean) : [];
+  roots.push(join(homedir(), ".local", "share", "opencode"));
+  return [...new Set(roots)];
+}
+
+interface OpenCodeRaw {
+  id?: string;
+  sessionID?: string;
+  session_id?: string;
+  providerID?: string;
+  modelID?: string;
+  role?: string;
+  time?: { created?: number | string };
+  tokens?: {
+    input?: number;
+    output?: number;
+    total?: number;
+    cache?: { read?: number; write?: number };
+  };
+  cost?: number;
+}
+
+function openCodeRec(raw: OpenCodeRaw, fallbackId: string): Rec | null {
+  const u = raw.tokens;
+  if (!u || (raw.role && raw.role !== "assistant")) return null;
+  const created = raw.time?.created;
+  const ts = typeof created === "number"
+    ? new Date(created).toISOString()
+    : typeof created === "string"
+      ? new Date(created).toISOString()
+      : "";
+  const input = Math.max(0, Number(u.input) || 0);
+  const cacheRead = Math.max(0, Number(u.cache?.read) || 0);
+  const cacheWrite = Math.max(0, Number(u.cache?.write) || 0);
+  let output = Math.max(0, Number(u.output) || 0);
+  const known = input + output + cacheRead + cacheWrite;
+  const total = Math.max(0, Number(u.total) || 0);
+  if (total > known) output += total - known;
+  if (input + output + cacheRead + cacheWrite === 0) return null;
+  return {
+    ts,
+    day: ts.slice(0, 10),
+    tool: "opencode",
+    provider: raw.providerID || "unknown",
+    model: raw.modelID || "unknown",
+    sessionId: raw.sessionID || raw.session_id || fallbackId,
+    input,
+    output,
+    cacheWrite,
+    cacheRead,
+    webSearch: 0,
+    webFetch: 0,
+    ...(typeof raw.cost === "number" ? { costUSD: raw.cost } : {}),
+  };
+}
+
+export async function loadOpenCode(roots = openCodeRoots()): Promise<Rec[]> {
+  const records = new Map<string, Rec>();
+  for (const root of roots) {
+    const jsonFiles: string[] = [];
+    walk(join(root, "storage", "message"), (name) => name.endsWith(".json"), jsonFiles);
+    for (const file of jsonFiles) {
+      try {
+        const raw = JSON.parse(readFileSync(file, "utf8")) as OpenCodeRaw;
+        const rec = openCodeRec(raw, basename(file));
+        if (rec) records.set(raw.id || `json:${file}`, rec);
+      } catch {
+        /* malformed historical records are ignored */
+      }
+    }
+
+    const dbFiles = existsSync(root)
+      ? readdirSync(root).filter((name) => name === "opencode.db" || /^opencode-.*\.db$/.test(name)).sort()
+      : [];
+    if (!dbFiles.length) continue;
+    try {
+      const { DatabaseSync } = await import("node:sqlite");
+      for (const name of dbFiles) {
+        const db = new DatabaseSync(join(root, name), { readOnly: true });
+        try {
+          const rows = db.prepare("SELECT id, session_id, data FROM message").all() as Array<{ id: string; session_id?: string; data: string }>;
+          for (const row of rows) {
+            try {
+              const raw = JSON.parse(row.data) as OpenCodeRaw;
+              raw.id ||= row.id;
+              raw.sessionID ||= row.session_id;
+              const rec = openCodeRec(raw, row.id);
+              if (rec) records.set(row.id, rec);
+            } catch {
+              /* ignore malformed database rows */
+            }
+          }
+        } finally {
+          db.close();
+        }
+      }
+    } catch {
+      // Bun/Deno or older Node builds may not expose node:sqlite. JSON fallback
+      // still works, and other usage sources remain available.
+    }
+  }
+  return [...records.values()];
+}
+
 /* ------------------------------ registry ------------------------------ */
 export interface Source {
   tool: Rec["tool"];
   label: string;
-  load: () => Rec[];
+  load: () => Rec[] | Promise<Rec[]>;
 }
 export const SOURCES: Source[] = [
   { tool: "claude", label: "Claude Code", load: loadClaude },
   { tool: "codex", label: "Codex", load: loadCodex },
+  { tool: "opencode", label: "OpenCode", load: loadOpenCode },
 ];
 
 // Read every supported CLI. Sources with no data simply contribute nothing.
-export function collectAll(): Rec[] {
+export async function collectAll(): Promise<Rec[]> {
   const all: Rec[] = [];
   for (const s of SOURCES) {
     try {
-      all.push(...s.load());
+      all.push(...await s.load());
     } catch {
       /* a broken source never breaks the others */
     }

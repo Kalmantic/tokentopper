@@ -1,12 +1,12 @@
 # Releasing TokenTopper
 
-TokenTopper releases are prepared by Release Please and published to npm from GitHub Actions with provenance. The npm credential is stored only as the masked GitHub Actions secret `NPMJS_TOKEN`; it must never appear in repository files, logs, local shell history, or chat.
+TokenTopper releases are prepared by Release Please and published to npm from GitHub Actions through npm Trusted Publishing. GitHub's short-lived OIDC identity replaces long-lived npm write tokens and npm automatically attaches provenance.
 
 ## One-time repository setup
 
-1. Revoke any npm token exposed outside npm or GitHub's encrypted secret form. Exposed tokens must be considered compromised.
-2. Create a package-scoped npm publishing token for `tokentopper` and save it as the repository Actions secret `NPMJS_TOKEN`. Never print or paste its value into a workflow, issue, log, or chat.
-3. In GitHub, create an environment named `npm`. Add required reviewers if releases should require a human approval at the final publish boundary.
+1. Revoke any npm token exposed outside npm. Exposed tokens must be considered compromised; TokenTopper does not require a write token.
+2. In the npm package settings for `tokentopper`, add a GitHub Actions trusted publisher with organization `Kalmantic`, repository `tokentopper`, workflow filename `release.yml`, environment `npm`, and the `npm publish` action allowed.
+3. In GitHub, create an environment named `npm`. Add required reviewers if releases should require a human approval at the final publish boundary. The environment name must exactly match the npm trusted-publisher configuration.
 4. Allow Release Please to maintain its release PR using one of these approaches:
    - preferred: have a Kalmantic organization owner allow GitHub Actions to create pull requests;
    - fallback: create a fine-grained GitHub token limited to `Kalmantic/tokentopper` with Contents and Pull requests read/write access, then save it as the repository Actions secret `RELEASE_PLEASE_TOKEN`.
@@ -14,7 +14,7 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
 5. Protect `main` and require the CI checks before merge.
 6. Enable GitHub secret scanning and push protection for the repository.
 
-`RELEASE_PLEASE_TOKEN`, when needed, is a GitHub automation credential only. npm publishing uses only `NPMJS_TOKEN`. Rotate the npm credential according to its configured expiry and immediately after suspected exposure.
+`RELEASE_PLEASE_TOKEN`, when needed, is a GitHub automation credential only. npm publishing uses OIDC and must not receive `NODE_AUTH_TOKEN` or an npm write-token secret.
 
 ## Normal release flow
 
@@ -25,7 +25,7 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
 2. CI runs `npm run check` on Node.js 22 and 24 across Linux, macOS, and Windows.
 3. Release Please updates a release PR containing the next version and changelog.
 4. Review and merge the release PR.
-5. The same release workflow creates the Git tag and GitHub Release, checks out the tagged commit, reruns the full package gate, and publishes with npm provenance.
+5. The same release workflow creates the Git tag and GitHub Release, checks out the tagged commit, reruns the full package gate, and publishes through npm Trusted Publishing with automatic provenance.
 6. `scripts/verify-release.mjs` waits for registry propagation and verifies the version, `latest` tag, description, integrity, provenance, clean installation, and CLI version.
 7. After npm verification passes, the release workflow attaches the exact npm tarball, its SHA-256 checksum, and a CycloneDX SBOM to the GitHub Release.
 
@@ -47,7 +47,7 @@ Never put a prerelease on `latest`.
 
 ### Publish failed before npm accepted the version
 
-Fix the workflow or npm-token configuration, then rerun the failed publish job. A version may be retried only if `npm view tokentopper@<version>` confirms it does not exist.
+Fix the workflow or npm trusted-publisher configuration, then rerun the failed publish job. A version may be retried only if `npm view tokentopper@<version>` confirms it does not exist.
 
 ### npm accepted the version but verification failed
 
@@ -78,5 +78,5 @@ npm pack --dry-run
 Post-release verification for an exact version:
 
 ```sh
-node scripts/verify-release.mjs 0.3.0
+node scripts/verify-release.mjs 0.4.0
 ```

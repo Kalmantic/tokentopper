@@ -21,7 +21,7 @@ export function tierFor(annualTokens: number): string {
   return "Legend";
 }
 
-// Professional AI Index: a local 0..100 estimate, log-scaled from 100M/yr (0) to
+// Professional AI Usage Index: a local 0..100 estimate, log-scaled from 100M/yr (0) to
 // 250B/yr (100). The authoritative, rank-relative Index is computed server-side.
 export function indexFor(annualTokens: number): number {
   const lo = Math.log10(1e8);

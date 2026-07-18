@@ -1,14 +1,25 @@
 # tokentopper
 
 Measure how much you actually use **Claude Code** and **Codex**. tokentopper scores
-your **Professional AI Index**, shows your run-rate and your tier on the 2027 curve,
+your **Professional AI Usage Index**, shows your run-rate and your tier on the 2027 curve,
 and ranks you among the Token Masters at
 [openfactoryai.com/tools/tokentopper](https://openfactoryai.com/tools/tokentopper/).
+
+## Install and run
+
+TokenTopper supports the maintained Node.js 22 and 24 LTS lines. Run the current release without installing it:
 
 ```sh
 npx tokentopper@latest            # your run-rate, tier, and Index
 npx tokentopper@latest export     # write a signed.json to upload
 npx tokentopper@latest sync       # sign and push it automatically
+```
+
+Or install the CLI globally:
+
+```sh
+npm install --global tokentopper
+tokentopper
 ```
 
 ## Supported terminals
@@ -20,7 +31,7 @@ npx tokentopper@latest sync       # sign and push it automatically
 | **OpenCode** | 🛣️ On the roadmap |
 | Gemini CLI, GitHub Copilot & more | 🛣️ On the roadmap |
 
-**Claude Code and Codex today — OpenCode is next, with other terminals to follow.**
+**Claude Code and Codex are supported today. OpenCode and other AI coding tools are on the roadmap.**
 One index across every coding agent you use.
 
 ## What it reads
@@ -56,6 +67,13 @@ Your private key stays in `~/.tokentopper/key.json`.
 
 Private by default. You only appear on the public leaderboard if you opt in and
 connect LinkedIn at the site.
+
+## Development and releases
+
+Run `npm run check` to typecheck, test the usage readers, build the CLI, pack the
+publishable tarball, install it in an isolated directory, and smoke-test its commands.
+The automated release process and recovery steps are documented in
+[`docs/RELEASING.md`](docs/RELEASING.md).
 
 ## Credits
 

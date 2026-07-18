@@ -1,7 +1,7 @@
 {
   "name": "tokentopper",
-  "version": "0.2.4",
-  "description": "Measure how much you actually use Claude Code and Codex. tokentopper reads your local coding-agent usage, scores your Professional AI Index, shows your run-rate and your tier on the 2027 curve (the 8-tier tokenmaxxing ladder, Curious to Legend), and exports a tamper-evident, ed25519-signed signed.json to claim a verified, shareable rank at openfactoryai.com/tools/tokentopper. Supports Claude Code and Codex today; OpenCode and more terminals are on the roadmap. Private by default; only token counts, models, and dates leave your machine, never your prompts or code.",
+  "version": "0.2.5",
+  "description": "tokentopper measures how much you use Claude Code and Codex and scores your Professional AI Usage Index. See your run-rate, tier, and verified shareable rank. Claude Code and Codex are supported today; OpenCode and other AI coding tools are on the roadmap. Private by default: prompts and code never leave your machine.",
   "type": "module",
   "bin": {
     "tokentopper": "dist/cli.js"
@@ -12,12 +12,16 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18.17"
+    "node": "^22.0.0 || ^24.0.0"
   },
   "scripts": {
-    "build": "tsup src/cli.ts --format esm --target node18 --clean",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "pack:check": "npm run build && node scripts/pack-check.mjs",
+    "check": "npm run typecheck && npm test && npm run pack:check",
     "dev": "node --experimental-strip-types src/cli.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run check"
   },
   "keywords": [
     "claude",
@@ -42,13 +46,14 @@
   "homepage": "https://openfactoryai.com/tools/tokentopper/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kalmantic/tokentopper.git"
+    "url": "git+https://github.com/Kalmantic/tokentopper.git"
   },
   "author": "Kalmantic",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.14.0",
-    "tsup": "^8.3.0",
+    "esbuild": "^0.28.1",
+    "tsx": "^4.23.1",
     "typescript": "^5.5.0"
   }
 }

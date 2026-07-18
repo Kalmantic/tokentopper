@@ -5,7 +5,10 @@
 
 ### Features
 
-* document OpenCode and agent skill distribution ([#11](https://github.com/Kalmantic/tokentopper/issues/11)) ([617ba9c](https://github.com/Kalmantic/tokentopper/commit/617ba9c4e3ccbc51020d418677189a8d2d7047af))
+* add OpenCode SQLite/JSON usage ingestion with database-first deduplication ([#10](https://github.com/Kalmantic/tokentopper/pull/10))
+* distribute through Bun, Deno, JSR, and a reproducible four-system Nix flake ([#10](https://github.com/Kalmantic/tokentopper/pull/10))
+* ship a consent-gated TokenTopper Agent Skill installer for Claude and Codex ([#10](https://github.com/Kalmantic/tokentopper/pull/10))
+* document OpenCode and agent skill distribution ([#11](https://github.com/Kalmantic/tokentopper/pull/11)) ([617ba9c](https://github.com/Kalmantic/tokentopper/commit/617ba9c4e3ccbc51020d418677189a8d2d7047af))
 
 ## [0.3.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.2.5...tokentopper-v0.3.0) (2026-07-18)
 

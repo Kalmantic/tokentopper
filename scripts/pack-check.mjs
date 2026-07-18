@@ -13,7 +13,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const npmCli = process.env.npm_execpath;
+assert(npmCli, "pack:check must run through npm so npm_execpath is available");
 const temp = mkdtempSync(join(tmpdir(), "tokentopper-pack-check-"));
 
 function run(command, args, options = {}) {
@@ -51,7 +52,7 @@ try {
   assert.equal(lock.version, packageJson.version, "lockfile version must match package version");
   assert.equal(lock.packages[""].version, packageJson.version, "root lock package version must match");
 
-  const packResult = run(npm, ["pack", "--ignore-scripts", "--json", "--pack-destination", temp]);
+  const packResult = run(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", temp]);
   const packed = JSON.parse(packResult.stdout)[0];
   assert.equal(packed.name, packageJson.name);
   assert.equal(packed.version, packageJson.version);
@@ -67,9 +68,11 @@ try {
   mkdirSync(homeDir, { recursive: true });
   writeFileSync(join(installDir, "package.json"), '{"private":true,"type":"module"}\n');
   const tarball = join(temp, packed.filename);
-  run(npm, ["install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], { cwd: installDir });
+  run(process.execPath, [npmCli, "install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], { cwd: installDir });
 
-  const bin = join(installDir, "node_modules", ".bin", process.platform === "win32" ? "tokentopper.cmd" : "tokentopper");
+  const installedPackage = JSON.parse(readFileSync(join(installDir, "node_modules", packageJson.name, "package.json"), "utf8"));
+  assert.equal(installedPackage.bin?.tokentopper, "dist/cli.js");
+  const bin = join(installDir, "node_modules", packageJson.name, installedPackage.bin.tokentopper);
   const env = {
     ...process.env,
     HOME: homeDir,
@@ -78,8 +81,10 @@ try {
     CODEX_HOME: join(homeDir, ".codex"),
   };
 
-  assert.equal(run(bin, ["--version"], { cwd: installDir, env }).stdout.trim(), packageJson.version);
-  assert.match(run(bin, ["--help"], { cwd: installDir, env }).stdout, /Professional AI Usage Index/);
+  const cli = (args, options = {}) => run(process.execPath, [bin, ...args], options);
+  const cliAsync = (args, options = {}) => runAsync(process.execPath, [bin, ...args], options);
+  assert.equal(cli(["--version"], { cwd: installDir, env }).stdout.trim(), packageJson.version);
+  assert.match(cli(["--help"], { cwd: installDir, env }).stdout, /Professional AI Usage Index/);
 
   const fixtureDir = join(homeDir, ".claude", "projects", "pack-check");
   mkdirSync(fixtureDir, { recursive: true });
@@ -96,10 +101,10 @@ try {
       },
     })}\n`,
   );
-  assert.match(run(bin, [], { cwd: installDir, env }).stdout, /TokenTopper/);
+  assert.match(cli([], { cwd: installDir, env }).stdout, /TokenTopper/);
 
   const exportPath = join(temp, "signed.json");
-  run(bin, ["export", "--out", exportPath, "--pretty"], { cwd: installDir, env });
+  cli(["export", "--out", exportPath, "--pretty"], { cwd: installDir, env });
   const signed = JSON.parse(readFileSync(exportPath, "utf8"));
   assert.equal(signed.schema, "tokentopper-signed/1");
   assert.equal(signed.payload.tool.version, packageJson.version);
@@ -119,8 +124,7 @@ try {
   try {
     const address = server.address();
     assert(address && typeof address === "object");
-    await runAsync(
-      bin,
+    await cliAsync(
       ["sync", "--token", "pack-check-token", "--endpoint", `http://127.0.0.1:${address.port}/usage`],
       { cwd: installDir, env },
     );

@@ -10,7 +10,7 @@ export interface Config {
   token?: string;
 }
 
-const DEFAULT_ENDPOINT = "https://openfactoryai.com/api/tokentopper/usage";
+const DEFAULT_ENDPOINT = "https://tokentopper-api-398148474652.us-central1.run.app/v1/usage";
 
 export function readConfig(): Config {
   if (!existsSync(PATH)) return {};

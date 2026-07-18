@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import {
   mkdtempSync,
   mkdirSync,
+  existsSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -58,7 +59,7 @@ try {
   assert.equal(packed.version, packageJson.version);
   assert.deepEqual(
     packed.files.map((file) => file.path).sort(),
-    ["LICENSE", "README.md", "dist/cli.js", "package.json"],
+    ["LICENSE", "README.md", "dist/cli.js", "package.json", "skills/tokentopper/SKILL.md", "skills/tokentopper/agents/openai.yaml"],
     "published tarball contains unexpected files",
   );
 
@@ -85,6 +86,8 @@ try {
   const cliAsync = (args, options = {}) => runAsync(process.execPath, [bin, ...args], options);
   assert.equal(cli(["--version"], { cwd: installDir, env }).stdout.trim(), packageJson.version);
   assert.match(cli(["--help"], { cwd: installDir, env }).stdout, /Professional AI Usage Index/);
+  assert.match(cli(["skill", "install", "--claude"], { cwd: installDir, env }).stdout, /Installed TokenTopper skill/);
+  assert.equal(existsSync(join(homeDir, ".claude", "skills", "tokentopper", "SKILL.md")), true);
 
   const fixtureDir = join(homeDir, ".claude", "projects", "pack-check");
   mkdirSync(fixtureDir, { recursive: true });

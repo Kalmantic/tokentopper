@@ -9,7 +9,7 @@ Recorded on 2026-07-18, four days after the repository was created:
 - npm downloads: 1,236 lifetime, with all downloads occurring in the latest week;
 - GitHub stars: 0;
 - GitHub forks: 0;
-- supported usage sources: Claude Code and Codex;
+- supported usage sources: Claude Code, Codex, and OpenCode;
 - primary install path: `npx tokentopper@latest`;
 - public destination: [openfactoryai.com/tools/tokentopper](https://openfactoryai.com/tools/tokentopper/).
 
@@ -19,7 +19,7 @@ The npm number is encouraging but should not be treated as 1,236 activated users
 
 TokenTopper owns this sentence:
 
-> Your Professional AI Usage Index for Claude Code and Codex.
+> Your Professional AI Usage Index for Claude Code, Codex, and OpenCode.
 
 It should be discoverable for accurate phrases such as:
 
@@ -27,6 +27,8 @@ It should be discoverable for accurate phrases such as:
 - Claude Code token usage;
 - Codex usage tracker;
 - Codex token usage;
+- OpenCode usage tracker;
+- OpenCode token usage;
 - AI coding agent usage analytics;
 - developer AI usage score;
 - coding-agent leaderboard;
@@ -85,7 +87,7 @@ Relevant integrations are OpenCode ingestion, stable JSON output, a verified bad
 - [x] Align npm, GitHub, and CLI wording on Professional AI Usage Index.
 - [x] Add accurate npm keywords and GitHub topics.
 - [x] Document privacy before asking users to publish.
-- [ ] Release the verified `0.3.0` distribution workflow.
+- [ ] Publish the verified `0.4.0` npm and JSR releases (owner actions are tracked in GitHub issues #14 and #15).
 - [ ] Add a website install CTA that preserves the exact `npx tokentopper@latest` command.
 - [ ] Add a visible GitHub star link after a user gets a useful result.
 - [ ] Add tagged README and profile links so referrals can be attributed without CLI telemetry.
@@ -101,7 +103,7 @@ Relevant integrations are OpenCode ingestion, stable JSON output, a verified bad
 
 ### Days 31–60: ecosystem coverage
 
-- [ ] Add OpenCode ingestion with fixture-based parity tests.
+- [x] Add OpenCode ingestion with fixture-based parity tests.
 - [ ] Publish a compatibility document for every supported agent and file format.
 - [ ] Create an “AI developer setup” example that includes TokenTopper as an optional observability tool.
 - [ ] Ask maintainers of genuinely relevant coding-agent lists and setup templates for inclusion after the integration is stable.

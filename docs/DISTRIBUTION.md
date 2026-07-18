@@ -10,7 +10,7 @@ This gives users two supported acquisition paths without multiplying release imp
 | --- | --- | --- | --- |
 | `npx tokentopper@latest` | Most users; no persistent install | Primary | npm integrity and provenance, packed-CLI smoke test |
 | `npm install --global tokentopper` | Frequent CLI users | Supported | Same npm artifact and provenance |
-| Exact npm version, such as `npx tokentopper@0.3.0` | Reproducible use and CI | Supported | Immutable version plus registry integrity |
+| Exact npm version, such as `npx tokentopper@<version>` | Reproducible use and CI | Supported | Immutable version plus registry integrity |
 | GitHub Release npm tarball | Auditing, mirroring, restricted environments | Supported mirror | SHA-256 checksum, SBOM, Git tag, and npm provenance |
 | `pnpm dlx` and compatible npm-registry clients | Users of alternate JavaScript package managers | Best effort | They consume the npm artifact, but are not separate release channels |
 
@@ -22,7 +22,7 @@ This gives users two supported acquisition paths without multiplying release imp
 | Bun | `bunx tokentopper@latest` | Executes the same npm artifact with Bun |
 | Deno | `deno run -A npm:tokentopper@latest` | Executes the npm artifact through Deno's npm compatibility layer |
 | Nix | `nix run github:Kalmantic/tokentopper` | Builds the repository flake with Node.js 24 and the locked npm graph |
-| JSR | `@openfactoryai/tokentopper` | Source module and CLI export; requires one-time JSR scope/package linking |
+| JSR | `@openfactoryai/tokentopper` | Source module and CLI export; publication awaits JSR scope authorization |
 | Claude + Codex Agent Skill | `npx tokentopper@latest skill install` | One portable, consent-gated skill copied from the npm artifact |
 
 `bunx` is not a separate registry publication. It resolves npm packages and their
@@ -31,9 +31,10 @@ execute the exact package version in CI before being advertised.
 
 JSR is a module registry, so TokenTopper exposes pure aggregate calculation APIs at
 the default export and the executable source at `@openfactoryai/tokentopper/cli`.
-Before the first publish, create the `openfactoryai` scope and `tokentopper` package
-at JSR, link it to `Kalmantic/tokentopper`, and create the GitHub `jsr` environment.
-The JSR workflow then publishes with OIDC and no long-lived registry token.
+The `openfactoryai` scope and `tokentopper` package exist at JSR and are linked to
+`Kalmantic/tokentopper`. Publishing uses OIDC and no long-lived registry token. The
+remaining owner action is to authorize the triggering GitHub user as a scope member
+or disable the scope's “Restrict publishing to members” policy (GitHub issue #14).
 
 The repository flake makes `nix run` available immediately. Inclusion in the central
 Nixpkgs collection is a separate upstream contribution made after a stable tagged

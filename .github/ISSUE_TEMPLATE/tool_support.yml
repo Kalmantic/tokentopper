@@ -1,0 +1,39 @@
+name: Coding-agent support request
+description: Propose a new local usage source
+title: "source: "
+labels: [enhancement, source]
+body:
+  - type: input
+    id: tool
+    attributes:
+      label: Coding agent
+      placeholder: OpenCode
+    validations:
+      required: true
+  - type: input
+    id: docs
+    attributes:
+      label: Public format or storage documentation
+      description: Link to authoritative documentation or source code describing the local usage format.
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: Why this source matters
+      description: Describe the users and usage fields it would add.
+    validations:
+      required: true
+  - type: textarea
+    id: caveats
+    attributes:
+      label: Replay, deduplication, and privacy caveats
+      description: Do not paste real logs, prompts, responses, code, local paths, or credentials.
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I can help create synthetic fixtures and tests.

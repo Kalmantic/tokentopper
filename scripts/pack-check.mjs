@@ -103,6 +103,10 @@ try {
   );
   assert.match(cli([], { cwd: installDir, env }).stdout, /TokenTopper/);
 
+  const jsonSummary = JSON.parse(cli(["json", "--pretty"], { cwd: installDir, env }).stdout);
+  assert.equal(jsonSummary.schema, "tokentopper-summary/1");
+  assert.equal("machine" in jsonSummary, false);
+
   const exportPath = join(temp, "signed.json");
   cli(["export", "--out", exportPath, "--pretty"], { cwd: installDir, env });
   const signed = JSON.parse(readFileSync(exportPath, "utf8"));

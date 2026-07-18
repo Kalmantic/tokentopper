@@ -56,6 +56,17 @@ export interface Aggregate {
   machine: { id: string; hostname: string; os: string };
 }
 
+export type PublicAggregate = Omit<Aggregate, "schema" | "machine"> & {
+  schema: "tokentopper-summary/1";
+};
+
+// Script-friendly output excludes stable machine IDs and hostnames so piping
+// it into another tool does not widen the privacy surface.
+export function toPublicAggregate(agg: Aggregate): PublicAggregate {
+  const { schema: _schema, machine: _machine, ...rest } = agg;
+  return { schema: "tokentopper-summary/1", ...rest };
+}
+
 const DAY_MS = 86_400_000;
 
 export function aggregate(recs: Rec[], version: string, now: number): Aggregate {

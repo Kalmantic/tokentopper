@@ -2,7 +2,7 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { collectAll } from "./usage";
-import { aggregate, TIERS, type Aggregate } from "./report";
+import { aggregate, TIERS, toPublicAggregate, type Aggregate } from "./report";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
 import packageJson from "../package.json";
@@ -103,6 +103,10 @@ function doExport(agg: Aggregate): void {
   console.log(dim(`  Upload it at ${SITE}`));
 }
 
+function doJson(agg: Aggregate): void {
+  console.log(JSON.stringify(toPublicAggregate(agg), null, has("pretty") ? 2 : 0));
+}
+
 async function doSync(agg: Aggregate): Promise<void> {
   const endpoint = resolveEndpoint(flag("endpoint"));
   const token = resolveToken(flag("token"));
@@ -172,13 +176,15 @@ ${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Inde
 
 ${bold("Usage")}
   tokentopper                 Show your run-rate, tier, and Index (default)
+  tokentopper json            Print machine-safe aggregate JSON
   tokentopper export          Write a signed.json you can upload
   tokentopper sync            Sign and push your usage to TokenTopper
   tokentopper login           Link this machine with your CLI token
 
 ${bold("Options")}
   --out <file>     export: output path (default signed.json)
-  --pretty         export: pretty-print the JSON
+  --json           Print machine-safe aggregate JSON
+  --pretty         json/export: pretty-print the JSON
   --endpoint <url> sync/login: override the upload endpoint
   --token <token>  sync/login: your CLI token
   --watch          sync: keep running and re-sync on an interval
@@ -201,8 +207,11 @@ async function main(): Promise<void> {
 
   const agg = build();
   if (!agg) noData();
+  if (has("json")) return doJson(agg);
 
   switch (command) {
+    case "json":
+      return doJson(agg);
     case "export":
       return doExport(agg);
     case "sync":

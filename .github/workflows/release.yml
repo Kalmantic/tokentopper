@@ -17,6 +17,7 @@ jobs:
     outputs:
       release-created: ${{ steps.release.outputs.release_created }}
       release-sha: ${{ steps.release.outputs.sha }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
       release-version: ${{ steps.release.outputs.version }}
     steps:
       - id: release
@@ -55,3 +56,31 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
         run: node scripts/verify-release.mjs "$RELEASE_VERSION"
+
+  release-assets:
+    name: Attach verified release assets
+    needs: [release-please, publish]
+    if: needs.release-please.outputs.release-created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ needs.release-please.outputs.release-sha }}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm install --global npm@11.18.0
+      - run: npm ci
+      - run: npm run check
+      - name: Build tarball, checksum, and SBOM
+        env:
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: npm run release:assets -- "$RELEASE_VERSION"
+      - name: Attach assets to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
+        run: gh release upload "$RELEASE_TAG" release-artifacts/*

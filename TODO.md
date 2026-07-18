@@ -65,6 +65,8 @@ npm remains the primary channel because it already supports `npx`, global instal
 - [ ] Consider WinGet only after signing and update automation are reliable.
 - [ ] Do not add Docker as an end-user install channel unless a server or CI use case appears; TokenTopper needs access to host-local agent usage files.
 - [ ] Do not add a curl-to-shell installer until artifacts are signed, checksummed, and rollback behavior is documented.
+- [x] Document npm as the primary channel and publish its tarball, checksum, and SBOM as audited GitHub Release assets.
+- [x] Document the evidence gate that must be met before standalone executables, Homebrew, or Scoop are adopted.
 
 Exit condition: each supported install command is automated, tested in a clean environment, documented, and produces the same TokenTopper version.
 

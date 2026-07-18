@@ -39,11 +39,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npm pack --ignore-scripts
+      - run: npm run release:assets
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: tokentopper-npm-${{ github.sha }}
-          path: tokentopper-*.tgz
+          name: tokentopper-release-assets-${{ github.sha }}
+          path: release-artifacts/*
           if-no-files-found: error
           retention-days: 7
 

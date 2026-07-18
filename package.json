@@ -27,24 +27,35 @@
   "keywords": [
     "claude",
     "claude-code",
+    "claude-code-usage",
     "codex",
-    "opencode",
+    "codex-usage",
     "anthropic",
     "openai",
     "tokens",
     "token-usage",
+    "token-tracker",
+    "ai-usage",
+    "usage-tracker",
     "usage",
     "cost",
     "ai",
+    "ai-coding",
+    "coding-agent",
     "llm",
     "leaderboard",
     "tokenmaxxing",
     "ccusage",
     "analytics",
     "cli",
+    "developer-tools",
+    "developer-productivity",
     "openfactoryai"
   ],
   "homepage": "https://openfactoryai.com/tools/tokentopper/",
+  "bugs": {
+    "url": "https://github.com/Kalmantic/tokentopper/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Kalmantic/tokentopper.git"

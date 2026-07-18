@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { aggregate, indexFor, tierFor } from "../src/report";
+import { aggregate, indexFor, tierFor, toPublicAggregate } from "../src/report";
 import type { Rec } from "../src/usage";
 
 test("tier and index boundaries remain stable", () => {
@@ -53,4 +53,15 @@ test("aggregate combines Claude and Codex without losing tool attribution", () =
   assert.equal(result.byTool.codex?.tokens, 350);
   assert.equal(result.window.spanDays, 2);
   assert.equal(result.window.activeDays, 2);
+});
+
+test("public aggregate excludes machine identity", () => {
+  const result = aggregate([], "9.9.9", Date.parse("2026-07-03T00:00:00.000Z"));
+  const publicResult = toPublicAggregate(result);
+  const serialized = JSON.stringify(publicResult);
+
+  assert.equal(publicResult.schema, "tokentopper-summary/1");
+  assert.equal("machine" in publicResult, false);
+  assert.equal(serialized.includes(result.machine.id), false);
+  assert.equal(serialized.includes(result.machine.hostname), false);
 });

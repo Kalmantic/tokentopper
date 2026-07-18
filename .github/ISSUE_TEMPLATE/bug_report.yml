@@ -1,0 +1,65 @@
+name: Bug report
+description: Report incorrect behavior without sharing private agent data
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never attach real Claude Code or Codex transcripts, prompts, responses, source code, tokens, or `.tokentopper` key files.
+  - type: input
+    id: version
+    attributes:
+      label: TokenTopper version
+      description: Run `npx tokentopper@latest --version`.
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Usage source
+      options:
+        - Claude Code
+        - Codex
+        - Both
+        - CLI or packaging
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Remove paths, usernames, prompts, responses, code, tokens, and signing material.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal sanitized reproduction
+      description: Prefer synthetic data or commands that do not reveal local content.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed private transcripts, code, paths, credentials, and signing keys.
+          required: true

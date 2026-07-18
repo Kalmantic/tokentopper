@@ -23,6 +23,7 @@ This gives users two supported acquisition paths without multiplying release imp
 | Deno | `deno run -A npm:tokentopper@latest` | Executes the npm artifact through Deno's npm compatibility layer |
 | Nix | `nix run github:Kalmantic/tokentopper` | Builds the repository flake with Node.js 24 and the locked npm graph |
 | JSR | `@openfactoryai/tokentopper` | Source module and CLI export; requires one-time JSR scope/package linking |
+| Claude + Codex Agent Skill | `npx tokentopper@latest skill install` | One portable, consent-gated skill copied from the npm artifact |
 
 `bunx` is not a separate registry publication. It resolves npm packages and their
 `bin` entry. Deno can likewise consume the npm artifact directly. These paths must
@@ -40,7 +41,7 @@ release has been verified.
 
 ## Why not more channels yet
 
-TokenTopper reads local Claude Code and Codex data. A Docker image would isolate it from the files it needs and force users into broad host mounts, so Docker is not an appropriate end-user channel.
+TokenTopper reads local Claude Code, Codex, and OpenCode data. A Docker image would isolate it from the files it needs and force users into broad host mounts, so Docker is not an appropriate end-user channel.
 
 A curl-to-shell installer would add a high-trust bootstrap path without improving the artifact. It remains out of scope unless releases have platform-native signed executables and a documented rollback path.
 

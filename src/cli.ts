@@ -5,7 +5,7 @@ import { collectAll } from "./usage";
 import { aggregate, TIERS, toPublicAggregate, type Aggregate } from "./report";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
-import packageJson from "../package.json";
+import packageJson from "../package.json" with { type: "json" };
 
 const VERSION = packageJson.version;
 const SITE = "https://openfactoryai.com/tools/tokentopper/";

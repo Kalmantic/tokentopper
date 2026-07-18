@@ -48,6 +48,24 @@ npm install --global tokentopper
 tokentopper
 ```
 
+The same npm release runs through Bun and Deno. Deno permissions are broad because
+the CLI discovers local agent logs and can optionally write config or sync over the
+network:
+
+```sh
+bunx tokentopper@latest
+deno run -A npm:tokentopper@latest
+```
+
+Nix users can build and run the repository flake directly:
+
+```sh
+nix run github:Kalmantic/tokentopper
+```
+
+The calculation API is also prepared for JSR as `@openfactoryai/tokentopper`;
+registry publication requires the JSR scope/package to be linked to this repository.
+
 ## What it does
 
 TokenTopper is a local **Claude Code usage tracker** and **Codex token usage tracker**.

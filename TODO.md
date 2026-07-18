@@ -8,7 +8,7 @@ Goal: make TokenTopper easy to install, safe to publish, and verifiably usable o
 - [x] Publish `0.2.5` with the Professional AI Usage Index description.
 - [x] Document Claude Code and Codex as supported today.
 - [x] Document OpenCode and other AI coding tools as roadmap items.
-- [ ] Revoke every npm access token exposed during the `0.2.4`/`0.2.5` release and create no replacement long-lived publishing token.
+- [x] Revoke every npm access token exposed during the `0.2.4`/`0.2.5` release and create no replacement long-lived publishing token.
 - [x] Commit and push the `0.2.5` package metadata, README, lockfile, and CLI help changes on `agent/tokentopper-distro`.
 
 ## P0: make every package verifiable

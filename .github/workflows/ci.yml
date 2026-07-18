@@ -76,15 +76,8 @@ jobs:
         run: npm exec --yes --package=jsr@0.14.3 -- jsr publish --dry-run
       - name: Verify the Nix package and app
         run: |
-          nix flake lock
           nix flake check --print-build-logs
           test "$(nix run . -- --version)" = "$(node -p "require('./package.json').version")"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: tokentopper-flake-lock-${{ github.sha }}
-          path: flake.lock
-          if-no-files-found: error
-          retention-days: 1
 
   dependency-review:
     name: Dependency review

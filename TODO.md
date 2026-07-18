@@ -30,6 +30,8 @@ Exit condition: `npm run check` proves the exact tarball intended for publicatio
 - [x] Cache npm dependencies without caching build output.
 - [x] Upload the dry-run tarball as a CI artifact for inspection.
 - [x] Add dependency review and least-privilege workflow permissions.
+- [x] Pin every external GitHub Action and the release npm CLI to immutable versions.
+- [x] Add weekly Dependabot updates for npm development dependencies and pinned Actions.
 - [x] Enable GitHub secret scanning and push protection in repository settings.
 - [x] Protect `main` so the required checks must pass before merge.
 
@@ -41,6 +43,7 @@ Exit condition: a clean checkout passes build, tests, and packed-binary smoke te
 - [ ] Register `.github/workflows/release.yml` as the trusted publisher in npm package settings.
 - [ ] Allow GitHub Actions to create PRs at the Kalmantic organization level or add a repository-scoped `RELEASE_PLEASE_TOKEN` so Release Please can operate.
 - [x] Require npm provenance for every automated release.
+- [x] Restrict the GitHub `npm` deployment environment to protected branches.
 - [x] Use Release Please for this single-package repository; reconsider Changesets only if it becomes a monorepo.
 - [x] Generate release notes and a changelog from merged Conventional Commits.
 - [ ] Publish stable versions to `latest`; publish prereleases to `next` or `beta`.

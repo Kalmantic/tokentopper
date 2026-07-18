@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.3.0...tokentopper-v0.4.0) (2026-07-18)
+
+
+### Features
+
+* document OpenCode and agent skill distribution ([#11](https://github.com/Kalmantic/tokentopper/issues/11)) ([617ba9c](https://github.com/Kalmantic/tokentopper/commit/617ba9c4e3ccbc51020d418677189a8d2d7047af))
+
 ## [0.3.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.2.5...tokentopper-v0.3.0) (2026-07-18)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "tokentopper",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "tokentopper measures Claude Code, Codex, and OpenCode usage and scores your Professional AI Usage Index. See your run-rate, tier, and verified shareable rank. More AI coding tools are on the roadmap. Private by default: prompts and code never leave your machine.",
   "type": "module",
   "bin": {

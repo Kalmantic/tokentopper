@@ -1,16 +1,11 @@
 # Releasing TokenTopper
 
-TokenTopper releases are prepared by Release Please and published to npm from GitHub Actions using npm trusted publishing. No npm access token belongs in GitHub secrets, local shell history, repository files, or chat.
+TokenTopper releases are prepared by Release Please and published to npm from GitHub Actions with provenance. The npm credential is stored only as the masked GitHub Actions secret `NPMJS_TOKEN`; it must never appear in repository files, logs, local shell history, or chat.
 
 ## One-time repository setup
 
-1. Revoke all existing granular or legacy npm tokens that were used to publish TokenTopper. Tokens exposed outside the npm website must be considered compromised.
-2. In the npm settings for the `tokentopper` package, add a GitHub Actions trusted publisher:
-   - organization or user: `Kalmantic`
-   - repository: `tokentopper`
-   - workflow filename: `release.yml`
-   - environment: `npm`
-   - permission: `npm publish`
+1. Revoke any npm token exposed outside npm or GitHub's encrypted secret form. Exposed tokens must be considered compromised.
+2. Create a package-scoped npm publishing token for `tokentopper` and save it as the repository Actions secret `NPMJS_TOKEN`. Never print or paste its value into a workflow, issue, log, or chat.
 3. In GitHub, create an environment named `npm`. Add required reviewers if releases should require a human approval at the final publish boundary.
 4. Allow Release Please to maintain its release PR using one of these approaches:
    - preferred: have a Kalmantic organization owner allow GitHub Actions to create pull requests;
@@ -19,8 +14,7 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
 5. Protect `main` and require the CI checks before merge.
 6. Enable GitHub secret scanning and push protection for the repository.
 
-The trusted publisher identity is bound to `.github/workflows/release.yml`. Renaming that file requires updating the npm package settings before the next release.
-`RELEASE_PLEASE_TOKEN`, when needed, is a GitHub automation credential only. npm publishing never uses it and continues to authenticate through short-lived OIDC credentials.
+`RELEASE_PLEASE_TOKEN`, when needed, is a GitHub automation credential only. npm publishing uses only `NPMJS_TOKEN`. Rotate the npm credential according to its configured expiry and immediately after suspected exposure.
 
 ## Normal release flow
 
@@ -35,7 +29,7 @@ The trusted publisher identity is bound to `.github/workflows/release.yml`. Rena
 6. `scripts/verify-release.mjs` waits for registry propagation and verifies the version, `latest` tag, description, integrity, provenance, clean installation, and CLI version.
 7. After npm verification passes, the release workflow attaches the exact npm tarball, its SHA-256 checksum, and a CycloneDX SBOM to the GitHub Release.
 
-All external GitHub Actions are pinned to immutable commit SHAs. Dependabot should update those pins through reviewed pull requests rather than changing them during a release run. The publish job also pins the npm CLI version so trusted-publishing behavior does not drift unexpectedly.
+All external GitHub Actions are pinned to immutable commit SHAs. Dependabot should update those pins through reviewed pull requests rather than changing them during a release run. The publish job also pins the npm CLI version so authentication and provenance behavior do not drift unexpectedly.
 
 Do not edit `package.json` to make an ad hoc release after Release Please is enabled. Put version changes through its release PR so the source, lockfile, tag, GitHub Release, and npm registry remain aligned.
 
@@ -53,7 +47,7 @@ Never put a prerelease on `latest`.
 
 ### Publish failed before npm accepted the version
 
-Fix the workflow or trusted-publisher configuration, then rerun the failed publish job. A version may be retried only if `npm view tokentopper@<version>` confirms it does not exist.
+Fix the workflow or npm-token configuration, then rerun the failed publish job. A version may be retried only if `npm view tokentopper@<version>` confirms it does not exist.
 
 ### npm accepted the version but verification failed
 
@@ -61,7 +55,7 @@ Do not rerun `npm publish` and do not try to overwrite the version. Inspect the 
 
 - If only the dist-tag is wrong, repair it with `npm dist-tag add tokentopper@<version> latest` after confirming the target version.
 - If the package itself is bad, deprecate it with a precise message, fix forward, and release a new patch.
-- If provenance is missing, do not claim the release is provenance-backed. Fix trusted publishing and release a new patch.
+- If provenance is missing, do not claim the release is provenance-backed. Fix the workflow authentication and release a new patch.
 
 ### A bad release is already `latest`
 

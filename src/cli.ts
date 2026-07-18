@@ -5,8 +5,9 @@ import { collectAll } from "./usage";
 import { aggregate, TIERS, type Aggregate } from "./report";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
+import packageJson from "../package.json";
 
-const VERSION = "0.1.0";
+const VERSION = packageJson.version;
 const SITE = "https://openfactoryai.com/tools/tokentopper/";
 
 const argv = process.argv.slice(2);
@@ -60,7 +61,7 @@ function summary(agg: Aggregate): void {
   const models = Object.entries(agg.byModel).sort((a, b) => b[1].tokens - a[1].tokens);
 
   console.log("");
-  console.log(`  ${bold("TokenTopper")} ${dim("· the tokenmaxxing index")}`);
+  console.log(`  ${bold("TokenTopper")} ${dim("· Professional AI Usage Index")}`);
   console.log("");
   console.log(`  Run-rate      ${bold(green(fmtTokens(rr) + " tokens/yr"))}   ${dim("(" + fmtUSD(agg.runRate.costPerYear) + "/yr · " + agg.runRate.basis + ")")}`);
   console.log(`  Tier          ${bold(agg.tier)}   ${dim("· Index " + agg.index + "/100 (local estimate)")}`);
@@ -167,7 +168,7 @@ function doLogin(): void {
 
 function help(): void {
   console.log(`
-${bold("tokentopper")} ${dim("v" + VERSION)} — score your Claude Code usage, see where you rank.
+${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Index for Claude Code and Codex.
 
 ${bold("Usage")}
   tokentopper                 Show your run-rate, tier, and Index (default)
@@ -185,7 +186,8 @@ ${bold("Options")}
   -v, --version    Print version
   -h, --help       Print this help
 
-Reads ~/.claude/projects (and ~/.config/claude, $CLAUDE_CONFIG_DIR). Only counts,
+Supports Claude Code and Codex today; more AI coding tools are on the roadmap.
+Reads ~/.claude/projects (and ~/.config/claude, $CLAUDE_CONFIG_DIR) and ~/.codex/sessions. Only counts,
 models, and days leave your machine, and only when you export or sync. Ranks at
 ${SITE}
 `);

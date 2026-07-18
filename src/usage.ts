@@ -62,9 +62,9 @@ interface ClaudeRaw {
   };
 }
 
-function loadClaude(): Rec[] {
+export function loadClaude(roots = claudeRoots()): Rec[] {
   const files: string[] = [];
-  for (const root of claudeRoots()) walk(root, (n) => n.endsWith(".jsonl"), files);
+  for (const root of roots) walk(root, (n) => n.endsWith(".jsonl"), files);
   const seen = new Map<string, Rec>();
   for (const file of files) {
     let text: string;
@@ -145,9 +145,9 @@ function sub(a: CodexUsage, b: CodexUsage | null): CodexUsage {
 // (or total-minus-previous), globally dedup identical events, and — for forked/
 // resumed sessions (a "forked_from_id" or "thread.spawn" marker) — skip the
 // replayed parent history, whose events all carry the fork-creation second.
-function loadCodex(): Rec[] {
+export function loadCodex(roots = codexRoots()): Rec[] {
   const files: string[] = [];
-  for (const root of codexRoots()) walk(root, (n) => n.startsWith("rollout-") && n.endsWith(".jsonl"), files);
+  for (const root of roots) walk(root, (n) => n.startsWith("rollout-") && n.endsWith(".jsonl"), files);
   files.sort();
   const recs: Rec[] = [];
   const seen = new Set<string>();

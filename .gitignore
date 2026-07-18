@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.log
+*.tgz
 signed.json
 .DS_Store
 .tokentopper/

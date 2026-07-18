@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "pack:check": "npm run build && node scripts/pack-check.mjs",
+    "release:assets": "node scripts/build-release-assets.mjs",
     "check": "npm run typecheck && npm test && npm run pack:check",
     "dev": "node --experimental-strip-types src/cli.ts",
     "prepublishOnly": "npm run check"

@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.log
 *.tgz
+release-artifacts/
 signed.json
 .DS_Store
 .tokentopper/

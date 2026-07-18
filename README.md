@@ -73,7 +73,9 @@ connect LinkedIn at the site.
 Run `npm run check` to typecheck, test the usage readers, build the CLI, pack the
 publishable tarball, install it in an isolated directory, and smoke-test its commands.
 The automated release process and recovery steps are documented in
-[`docs/RELEASING.md`](docs/RELEASING.md).
+[`docs/RELEASING.md`](docs/RELEASING.md). Supported distribution channels and
+the standalone-executable adoption gate are documented in
+[`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
 
 ## Credits
 

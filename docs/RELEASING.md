@@ -33,6 +33,7 @@ The trusted publisher identity is bound to `.github/workflows/release.yml`. Rena
 4. Review and merge the release PR.
 5. The same release workflow creates the Git tag and GitHub Release, checks out the tagged commit, reruns the full package gate, and publishes with npm provenance.
 6. `scripts/verify-release.mjs` waits for registry propagation and verifies the version, `latest` tag, description, integrity, provenance, clean installation, and CLI version.
+7. After npm verification passes, the release workflow attaches the exact npm tarball, its SHA-256 checksum, and a CycloneDX SBOM to the GitHub Release.
 
 All external GitHub Actions are pinned to immutable commit SHAs. Dependabot should update those pins through reviewed pull requests rather than changing them during a release run. The publish job also pins the npm CLI version so trusted-publishing behavior does not drift unexpectedly.
 

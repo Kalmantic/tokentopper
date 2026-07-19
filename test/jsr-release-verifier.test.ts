@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
@@ -8,10 +9,10 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
-const version = "0.5.0";
+const { version } = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as { version: string };
 const modules = {
   "/src/mod.ts": Buffer.from("export const indexFor = (value: number) => value;\n"),
-  "/src/cli.ts": Buffer.from("console.log('0.5.0');\n"),
+  "/src/cli.ts": Buffer.from(`console.log('${version}');\n`),
 };
 const tarball = Buffer.from("fixture JSR compatibility tarball");
 
@@ -90,7 +91,7 @@ test("JSR verifier checks status, module hashes, exports, and compatibility inte
       [resolve(root, "scripts/verify-jsr-release.mjs"), version],
       { cwd: root, env },
     );
-    assert.match(verified.stdout, /verified public JSR release @openfactoryai\/tokentopper@0\.5\.0/);
+    assert.equal(verified.stdout.trim(), `verified public JSR release @openfactoryai/tokentopper@${version}`);
 
     const status = await execFileAsync(
       process.execPath,

@@ -1,0 +1,58 @@
+name: Nixpkgs package
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/nixpkgs.yml
+      - nix/nixpkgs-package.nix
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/nixpkgs.yml
+      - nix/nixpkgs-package.nix
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Sandbox build and smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: NixOS/nixpkgs
+          ref: master
+          path: .nixpkgs
+          fetch-depth: 1
+          filter: blob:none
+          persist-credentials: false
+      - uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
+      - name: Add the package to the current Nixpkgs tree
+        run: |
+          mkdir -p .nixpkgs/pkgs/by-name/to/tokentopper
+          cp nix/nixpkgs-package.nix .nixpkgs/pkgs/by-name/to/tokentopper/package.nix
+          echo "nixpkgs-sha=$(git -C .nixpkgs rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Require a sandboxed build
+        run: nix config show sandbox | grep -Fx 'true'
+      - name: Evaluate and build the package
+        id: build
+        run: |
+          nix-instantiate .nixpkgs -A tokentopper >/dev/null
+          output="$(nix-build .nixpkgs -A tokentopper --no-out-link)"
+          echo "output=$output" >> "$GITHUB_OUTPUT"
+      - name: Verify the installed CLI and privacy-safe JSON
+        env:
+          OUTPUT: ${{ steps.build.outputs.output }}
+        run: |
+          test "$("$OUTPUT/bin/tokentopper" --version)" = "$(node -p "require('./package.json').version")"
+          test_dir="$(mktemp -d)"
+          mkdir -p "$test_dir/.claude/projects/nix-smoke"
+          printf '%s\n' '{"type":"assistant","timestamp":"2026-07-01T10:00:00.000Z","sessionId":"nix-smoke","message":{"id":"nix-smoke-message","model":"claude-sonnet-4","usage":{"input_tokens":100,"output_tokens":25}}}' \
+            > "$test_dir/.claude/projects/nix-smoke/session.jsonl"
+          HOME="$test_dir" "$OUTPUT/bin/tokentopper" json > "$test_dir/report.json"
+          jq -e '.schema == "tokentopper-summary/1" and .tool.name == "tokentopper" and (has("machine") | not)' "$test_dir/report.json"
+      - name: Build the Nixpkgs passthru smoke test
+        run: nix-build .nixpkgs -A tokentopper.tests.smoke --no-out-link

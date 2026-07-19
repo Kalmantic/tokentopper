@@ -73,6 +73,8 @@ npm remains the primary channel because it already supports `npx`, global instal
 - [x] Document npm as the primary channel and publish its tarball, checksum, and SBOM as audited GitHub Release assets.
 - [x] Document the evidence gate that must be met before standalone executables, Homebrew, or Scoop are adopted.
 - [x] Run a weekly clean-environment smoke test against the live npm artifact through npm install, npx, pinned pnpm dlx, bunx, the Bun runtime, Deno, and the immutable tagged Nix flake.
+- [x] Submit the sandbox-built `tokentopper` expression to Nixpkgs ([NixOS/nixpkgs#543426](https://github.com/NixOS/nixpkgs/pull/543426)).
+- [ ] Track the Nixpkgs pull request through review, merge, and inclusion in `nixpkgs-unstable`.
 - [ ] Publish `@openfactoryai/tokentopper` to JSR after the scope owner authorizes the triggering GitHub actor (GitHub issue #14).
 - [x] Make JSR publication idempotent and add public metadata, export checksum, npm-compatibility integrity, and Deno API/CLI verification.
 

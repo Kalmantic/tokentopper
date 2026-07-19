@@ -7,7 +7,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const workflowsDir = resolve(root, ".github/workflows");
 const workflowNames = readdirSync(workflowsDir).filter((name) => /\.ya?ml$/.test(name));
 const workflows = new Map(
-  workflowNames.map((name) => [name, readFileSync(resolve(workflowsDir, name), "utf8")]),
+  workflowNames.map((name) => [
+    name,
+    readFileSync(resolve(workflowsDir, name), "utf8").replace(/\r\n?/g, "\n"),
+  ]),
 );
 
 const release = workflows.get("release.yml");

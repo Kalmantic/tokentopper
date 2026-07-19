@@ -177,8 +177,12 @@ function doSkillInstall(): void {
     console.log("Usage: tokentopper skill install [--claude] [--codex] [--force]");
     return;
   }
-  const source = join(PACKAGE_ROOT, "skills", "tokentopper");
-  if (!existsSync(source)) {
+  const source = [
+    join(PACKAGE_ROOT, "skills", "tokentopper"),
+    join(dirname(process.execPath), "skills", "tokentopper"),
+    join(dirname(process.execPath), "..", "share", "tokentopper", "skills", "tokentopper"),
+  ].find(existsSync);
+  if (!source) {
     console.error("The TokenTopper skill is missing from this package.");
     process.exit(1);
   }

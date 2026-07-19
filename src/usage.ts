@@ -265,6 +265,45 @@ interface OpenCodeRaw {
   cost?: number;
 }
 
+interface OpenCodeRow {
+  id: string;
+  session_id?: string;
+  data: string;
+}
+
+interface SQLiteReader {
+  rows: () => OpenCodeRow[];
+  close: () => void;
+}
+
+async function openSQLiteReadOnly(path: string): Promise<SQLiteReader> {
+  try {
+    const { DatabaseSync } = await import("node:sqlite");
+    const db = new DatabaseSync(path, { readOnly: true });
+    return {
+      rows: () => db.prepare("SELECT id, session_id, data FROM message").all() as unknown as OpenCodeRow[],
+      close: () => db.close(),
+    };
+  } catch (nodeError) {
+    // Bun deliberately does not implement node:sqlite, but its native driver is
+    // available in bunx and compiled executables. Keep this import indirect so
+    // Node, Deno, TypeScript, and esbuild do not need to resolve a Bun builtin.
+    if (!process.versions.bun) throw nodeError;
+    const bunSQLite = "bun:sqlite";
+    const { Database } = await import(bunSQLite) as {
+      Database: new (filename: string, options: { readonly: boolean; create: boolean }) => {
+        query: (sql: string) => { all: () => OpenCodeRow[] };
+        close: () => void;
+      };
+    };
+    const db = new Database(path, { readonly: true, create: false });
+    return {
+      rows: () => db.query("SELECT id, session_id, data FROM message").all(),
+      close: () => db.close(),
+    };
+  }
+}
+
 function openCodeRec(raw: OpenCodeRaw, fallbackId: string): Rec | null {
   const u = raw.tokens;
   if (!u || (raw.role && raw.role !== "assistant")) return null;
@@ -319,12 +358,10 @@ export async function loadOpenCode(roots = openCodeRoots()): Promise<Rec[]> {
       : [];
     if (!dbFiles.length) continue;
     try {
-      const { DatabaseSync } = await import("node:sqlite");
       for (const name of dbFiles) {
-        const db = new DatabaseSync(join(root, name), { readOnly: true });
+        const db = await openSQLiteReadOnly(join(root, name));
         try {
-          const rows = db.prepare("SELECT id, session_id, data FROM message").all() as Array<{ id: string; session_id?: string; data: string }>;
-          for (const row of rows) {
+          for (const row of db.rows()) {
             try {
               const raw = JSON.parse(row.data) as OpenCodeRaw;
               raw.id ||= row.id;
@@ -340,8 +377,8 @@ export async function loadOpenCode(roots = openCodeRoots()): Promise<Rec[]> {
         }
       }
     } catch {
-      // Bun/Deno or older Node builds may not expose node:sqlite. JSON fallback
-      // still works, and other usage sources remain available.
+      // Deno or older Node builds may not expose a supported SQLite driver.
+      // JSON fallback still works, and other usage sources remain available.
     }
   }
   return [...records.values()];

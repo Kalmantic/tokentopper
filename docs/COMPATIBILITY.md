@@ -55,10 +55,10 @@ runtime, Deno, and the tagged Nix flake at the same exact version.
   recorded by OpenCode when present.
 - Deduplication: message ID. SQLite records replace matching JSON fallback records.
 
-SQLite ingestion requires Node's `node:sqlite`, available on the supported Node
-versions. Under Bun or Deno, TokenTopper still reads OpenCode's historical JSON
-fallback when the SQLite API is unavailable; use Node.js for complete current
-OpenCode database coverage.
+SQLite ingestion uses Node's `node:sqlite` on supported Node versions and Bun's
+native `bun:sqlite` driver under Bun. Deno still reads OpenCode's historical JSON
+fallback when no compatible SQLite API is available; use Node.js or Bun for
+complete current OpenCode database coverage.
 
 ## Local data and network boundary
 
@@ -91,7 +91,7 @@ the repository Nix flake instead of forcing an older Node release.
 2. Check the roots above and any custom `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, or
    `OPENCODE_DATA_DIR` value.
 3. Confirm the current user can read those directories and files.
-4. For current OpenCode SQLite data, run TokenTopper with Node.js 22 or 24.
+4. For current OpenCode SQLite data, run TokenTopper with Node.js 22/24 or Bun.
 
 One unreadable or malformed source does not stop the other sources; it simply
 contributes no records.
@@ -109,10 +109,11 @@ deno run -A --minimum-dependency-age=0 npm:tokentopper@latest
 config/key or contact the sync endpoint. Use the Node.js CLI if that permission
 surface is not acceptable.
 
-### OpenCode appears only under Node.js
+### OpenCode SQLite data is missing under Deno
 
-The current OpenCode database reader depends on `node:sqlite`. Bun and Deno can run
-the CLI and read JSON fallback records, but Node.js is required for the SQLite path.
+The OpenCode database reader uses `node:sqlite` under Node and `bun:sqlite` under
+Bun. Deno can run the CLI and read JSON fallback records, but it does not currently
+have a supported SQLite path.
 
 ### `Not linked yet` or an HTTP 401 during sync
 

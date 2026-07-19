@@ -63,7 +63,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
         run: node -e "const p=require('./package.json'); if(p.version!==process.env.RELEASE_VERSION) throw new Error(p.version+' != '+process.env.RELEASE_VERSION)"
       - name: Publish to npm with trusted publishing
-        run: npm publish --access public
+        run: npm publish --access public --provenance
       - name: Verify the public release
         env:
           RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
@@ -131,7 +131,7 @@ jobs:
             exit 1
           fi
       - name: Publish to npm with trusted publishing
-        run: npm publish --access public
+        run: npm publish --access public --provenance
       - name: Verify the public release
         env:
           RELEASE_VERSION: ${{ inputs.version }}

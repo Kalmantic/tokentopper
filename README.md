@@ -49,11 +49,12 @@ npm install --global tokentopper
 tokentopper
 ```
 
-The same npm release runs through Bun and Deno. Deno permissions are broad because
-the CLI discovers local agent logs and can optionally write config or sync over the
-network:
+The same npm release runs through pnpm, Bun, and Deno. Deno permissions are broad
+because the CLI discovers local agent logs and can optionally write config or sync
+over the network:
 
 ```sh
+pnpm dlx tokentopper@latest
 bunx tokentopper@latest
 deno run -A npm:tokentopper@latest
 ```

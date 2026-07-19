@@ -12,22 +12,24 @@ This gives users two supported acquisition paths without multiplying release imp
 | `npm install --global tokentopper` | Frequent CLI users | Supported | Same npm artifact and provenance |
 | Exact npm version, such as `npx tokentopper@<version>` | Reproducible use and CI | Supported | Immutable version plus registry integrity |
 | GitHub Release npm tarball | Auditing, mirroring, restricted environments | Supported mirror | Public re-download, npm integrity parity, SHA-256 checksum, SBOM, Git tag, and npm provenance |
-| `pnpm dlx` and compatible npm-registry clients | Users of alternate JavaScript package managers | Best effort | They consume the npm artifact, but are not separate release channels |
+| `pnpm dlx tokentopper@latest` | pnpm users; no persistent install | Supported npm client | Exact-version execution is tested against the live npm artifact |
+| Other compatible npm-registry clients | Users of alternate JavaScript package managers | Best effort | They consume the npm artifact, but are not separate release channels |
 
 ## Runtime and registry matrix
 
 | Channel | Command or package | Delivery model |
 | --- | --- | --- |
 | npm / Node.js | `npx tokentopper@latest` | Primary signed npm release |
+| pnpm | `pnpm dlx tokentopper@latest` | Executes the same npm artifact; pinned pnpm smoke-tested weekly |
 | Bun | `bunx tokentopper@latest` | Executes the same npm artifact with Bun |
 | Deno | `deno run -A npm:tokentopper@latest` | Executes the npm artifact through Deno's npm compatibility layer |
 | Nix | `nix run github:Kalmantic/tokentopper` | Builds the repository flake with Node.js 24 and the locked npm graph |
 | JSR | `@openfactoryai/tokentopper` | Source module and CLI export; publication awaits JSR scope authorization |
 | Claude + Codex Agent Skill | `npx tokentopper@latest skill install` | One portable, consent-gated skill copied from the npm artifact |
 
-`bunx` is not a separate registry publication. It resolves npm packages and their
-`bin` entry. Deno can likewise consume the npm artifact directly. These paths must
-execute the exact package version in CI before being advertised.
+`pnpm dlx` and `bunx` are not separate registry publications. They resolve npm
+packages and their `bin` entry. Deno can likewise consume the npm artifact directly.
+These paths must execute the exact package version in CI before being advertised.
 
 Deno 2.9+ applies a 24-hour minimum dependency age by default. The live release
 smoke test deliberately passes `--minimum-dependency-age=0` so a new release is

@@ -11,14 +11,15 @@ or branch names.
 | --- | --- | --- |
 | Node.js 22 and 24 | Supported | Primary runtime and the runtime used by the Nix flake |
 | `npx` / global npm install | Supported | Runs the provenance-backed npm artifact |
+| `pnpm dlx` | Supported | Runs the same npm artifact; current pnpm is pinned in live smoke tests |
 | `bunx` | Supported | Runs the npm package executable; `bunx --bun` is also tested |
 | Deno 2.9 | Supported | Runs the npm artifact through `deno run`; requires filesystem permissions |
 | Nix flake | Supported | Every release is tested through its immutable Git tag |
 | JSR | Prepared, not published | Publication awaits `@openfactoryai` scope authorization |
 
-The weekly `Live distribution smoke` workflow installs the public release in a
-clean environment and checks npm provenance, npm installation, `bunx`, the Bun
-runtime, Deno, and the tagged Nix flake at the same exact version.
+The weekly `Live distribution smoke` workflow uses a clean environment to check
+npm provenance and installation, the primary `npx` command, pinned `pnpm dlx`,
+`bunx`, the Bun runtime, Deno, and the tagged Nix flake at the same exact version.
 
 ## Usage-source compatibility
 

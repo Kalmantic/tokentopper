@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 const verifier = resolve("scripts/verify-standalone-candidate-set.mjs");
-const version = "0.5.0";
+const { version } = JSON.parse(readFileSync(resolve("package.json"), "utf8")) as { version: string };
 const sourceCommit = "a".repeat(40);
 
 function writeCandidate(directory: string, platform: "linux" | "macos" | "windows", arch: "x64" | "arm64") {

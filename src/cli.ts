@@ -52,7 +52,7 @@ async function build(): Promise<Aggregate | null> {
 function noData(): never {
   console.error(
     "No AI CLI usage found.\n" +
-      dim("Looked for Claude Code (~/.claude/projects) and Codex (~/.codex/sessions).\n") +
+      dim("Looked for Claude Code (~/.claude/projects), Codex (~/.codex/sessions), and OpenCode (~/.local/share/opencode).\n") +
       dim("Use a coding agent for a bit, then run this again."),
   );
   process.exit(1);
@@ -200,7 +200,7 @@ function doSkillInstall(): void {
 
 function help(): void {
   console.log(`
-${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Index for Claude Code and Codex.
+${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Index for Claude Code, Codex, and OpenCode.
 
 ${bold("Usage")}
   tokentopper                 Show your run-rate, tier, and Index (default)

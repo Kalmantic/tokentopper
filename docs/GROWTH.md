@@ -87,7 +87,8 @@ Relevant integrations are OpenCode ingestion, stable JSON output, a verified bad
 - [x] Align npm, GitHub, and CLI wording on Professional AI Usage Index.
 - [x] Add accurate npm keywords and GitHub topics.
 - [x] Document privacy before asking users to publish.
-- [ ] Publish the verified `0.4.0` npm and JSR releases (owner actions are tracked in GitHub issues #14 and #15).
+- [x] Publish the verified provenance-backed npm release (completed with `0.4.1`).
+- [ ] Publish the prepared JSR release after the scope-owner action in GitHub issue #14.
 - [ ] Add a website install CTA that preserves the exact `npx tokentopper@latest` command.
 - [ ] Add a visible GitHub star link after a user gets a useful result.
 - [ ] Add tagged README and profile links so referrals can be attributed without CLI telemetry.
@@ -124,7 +125,7 @@ Each guide should contain an answer in the first paragraph, the exact command, s
 
 1. How to check Claude Code token usage locally
 2. How to check Codex CLI token usage locally
-3. One usage report for Claude Code and Codex
+3. One usage report for Claude Code, Codex, and OpenCode
 4. What Claude Code cache-read tokens mean for cost
 5. How TokenTopper calculates annual AI coding run-rate
 6. Professional AI Usage Index methodology and tier boundaries

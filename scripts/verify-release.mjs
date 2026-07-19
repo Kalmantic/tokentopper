@@ -24,7 +24,7 @@ assert(published, `${name}@${expectedVersion} did not appear in the registry`);
 assert.equal(packument["dist-tags"]?.latest, expectedVersion, "latest dist-tag does not match the release");
 assert.equal(published.version, expectedVersion);
 assert.match(published.description, /Professional AI Usage Index/);
-assert.match(published.description, /Claude Code and Codex/);
+assert.match(published.description, /Claude Code, Codex, and OpenCode/);
 assert.match(published.description, /roadmap/i);
 assert.match(published.dist?.integrity ?? "", /^sha512-/);
 assert(published.dist?.attestations?.url, "npm provenance attestation is missing");

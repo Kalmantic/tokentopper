@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.4.2...tokentopper-v0.5.0) (2026-07-19)
+
+
+### Features
+
+* verify standalone distribution prototype ([#29](https://github.com/Kalmantic/tokentopper/issues/29)) ([0043c68](https://github.com/Kalmantic/tokentopper/commit/0043c68763969bb009cb95d90554a3c2a2e34c8e))
+
 ## [0.4.2](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.4.1...tokentopper-v0.4.2) (2026-07-19)
 
 

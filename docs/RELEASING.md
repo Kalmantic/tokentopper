@@ -10,7 +10,7 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
 4. Allow Release Please to maintain its release PR using one of these approaches:
    - preferred: have a Kalmantic organization owner allow GitHub Actions to create pull requests;
    - fallback: create a fine-grained GitHub token limited to `Kalmantic/tokentopper` with Contents and Pull requests read/write access, then save it as the repository Actions secret `RELEASE_PLEASE_TOKEN`.
-   The current Kalmantic organization policy blocks the built-in GitHub token, so one of these actions is required before merging the distribution PR.
+   TokenTopper currently uses the repository-scoped `RELEASE_PLEASE_TOKEN` fallback.
 5. Protect `main` and require the CI checks before merge.
 6. Enable GitHub secret scanning and push protection for the repository.
 
@@ -78,5 +78,5 @@ npm pack --dry-run
 Post-release verification for an exact version:
 
 ```sh
-node scripts/verify-release.mjs 0.4.0
+node scripts/verify-release.mjs <version>
 ```

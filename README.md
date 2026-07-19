@@ -57,6 +57,11 @@ bunx tokentopper@latest
 deno run -A npm:tokentopper@latest
 ```
 
+Deno 2.9+ holds newly published dependencies for 24 hours by default. During that
+window, wait for the age gate or explicitly run
+`deno run -A --minimum-dependency-age=0 npm:tokentopper@latest` after reviewing the
+npm provenance.
+
 Nix users can build and run the repository flake directly:
 
 ```sh

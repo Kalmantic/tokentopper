@@ -48,7 +48,7 @@ jobs:
         working-directory: ${{ runner.temp }}
         env:
           VERSION: ${{ steps.release.outputs.version }}
-        run: test "$(deno run -A "npm:tokentopper@$VERSION" --version)" = "$VERSION"
+        run: test "$(deno run -A --minimum-dependency-age=0 "npm:tokentopper@$VERSION" --version)" = "$VERSION"
       - name: Verify tagged Nix flake
         working-directory: ${{ runner.temp }}
         env:

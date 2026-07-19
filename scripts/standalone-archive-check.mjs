@@ -29,10 +29,10 @@ function filesUnder(path, prefix = "") {
 
 const temp = mkdtempSync(join(tmpdir(), "tokentopper-archive-"));
 try {
-  const unpackArgs = process.platform === "win32"
-    ? ["--force-local", "-xf", archive, "-C", temp]
-    : ["-xf", archive, "-C", temp];
-  const unpacked = spawnSync("tar", unpackArgs, { encoding: "utf8" });
+  const tar = process.platform === "win32"
+    ? join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe")
+    : "tar";
+  const unpacked = spawnSync(tar, ["-xf", archive, "-C", temp], { encoding: "utf8" });
   assert.equal(unpacked.status, 0, unpacked.stderr || unpacked.stdout);
   const roots = readdirSync(temp, { withFileTypes: true });
   assert.equal(roots.length, 1, "archive must contain exactly one top-level directory");

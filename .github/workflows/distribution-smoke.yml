@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   live-channels:
-    name: npm, Bun, Deno, and Nix
+    name: npm, npx, pnpm, Bun, Deno, and Nix
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -41,6 +41,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/verify-github-release-assets.mjs "${{ steps.release.outputs.version }}"
+      - name: Verify npx and pinned pnpm dlx execution
+        working-directory: ${{ runner.temp }}
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          test "$(npx --yes "tokentopper@$VERSION" --version)" = "$VERSION"
+          test "$(npm exec --yes --package=pnpm@11.15.0 -- pnpm --reporter=silent dlx "tokentopper@$VERSION" --version)" = "$VERSION"
       - name: Verify bunx and the Bun runtime
         working-directory: ${{ runner.temp }}
         env:

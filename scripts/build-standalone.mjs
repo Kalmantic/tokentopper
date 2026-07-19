@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 if (typeof Bun === "undefined") {
@@ -33,5 +33,14 @@ if (!result.success) {
 // intentionally shipped beside it so users can inspect the exact instructions
 // before installing them into Claude or Codex.
 cpSync(resolve(root, "skills"), resolve(directory, "skills"), { recursive: true });
+writeFileSync(resolve(directory, "manifest.json"), JSON.stringify({
+  schemaVersion: 1,
+  name: "tokentopper",
+  version,
+  platform: os,
+  arch,
+  runtime: { name: "bun", version: Bun.version },
+  sourceCommit: process.env.GITHUB_SHA || null,
+}, null, 2) + "\n");
 
 console.log(executable);

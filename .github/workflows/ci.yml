@@ -102,10 +102,21 @@ jobs:
         id: build
       - name: Verify parsers, local files, signing, skills, and mocked sync
         run: npm run standalone:check -- "${{ steps.build.outputs.binary }}"
+      - name: Package archive, manifest, checksum, and SBOM
+        shell: bash
+        run: echo "archive=$(npm run --silent standalone:package -- '${{ steps.build.outputs.binary }}')" >> "$GITHUB_OUTPUT"
+        id: package
+      - name: Verify clean archive extraction and runtime behavior
+        run: npm run standalone:archive-check -- "${{ steps.package.outputs.archive }}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: standalone-prototype-${{ matrix.os }}-${{ github.sha }}
-          path: standalone-artifacts/*
+          path: |
+            standalone-artifacts/*.tar.gz
+            standalone-artifacts/*.zip
+            standalone-artifacts/*.sha256
+            standalone-artifacts/*.manifest.json
+            standalone-artifacts/*.cdx.json
           if-no-files-found: error
           retention-days: 3
 

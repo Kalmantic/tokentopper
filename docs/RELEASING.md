@@ -32,6 +32,13 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
 
 All external GitHub Actions are pinned to immutable commit SHAs. Dependabot should update those pins through reviewed pull requests rather than changing them during a release run. The publish job also pins the npm CLI version so authentication and provenance behavior do not drift unexpectedly.
 
+Publishing and release-asset jobs explicitly disable setup-node's package-manager
+cache. Ordinary CI may cache downloaded dependencies for speed, but a release build
+must resolve the committed lockfile without restoring a dependency cache. The
+`npm run workflow:check` gate enforces this distinction, requires the protected
+deployment environments and job-scoped OIDC permissions, and rejects reusable npm
+credential variables anywhere under `.github/workflows`.
+
 Do not edit `package.json` to make an ad hoc release after Release Please is enabled. Put version changes through its release PR so the source, lockfile, tag, GitHub Release, and npm registry remain aligned.
 
 ## Prereleases

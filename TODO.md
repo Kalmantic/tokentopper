@@ -44,6 +44,7 @@ Exit condition: a clean checkout passes build, tests, and packed-binary smoke te
 - [x] Configure the repository-scoped `RELEASE_PLEASE_TOKEN` fallback so Release Please can operate under the current organization policy.
 - [x] Require npm provenance for every automated release.
 - [x] Restrict the GitHub `npm` deployment environment to protected branches.
+- [x] Disable package-manager caches in npm/JSR publishing and release-asset jobs, and enforce OIDC, protected environments, and the absence of reusable npm credential variables in CI.
 - [x] Use Release Please for this single-package repository; reconsider Changesets only if it becomes a monorepo.
 - [x] Generate release notes and a changelog from merged Conventional Commits.
 - [x] Publish stable versions to `latest`.

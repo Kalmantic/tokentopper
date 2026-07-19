@@ -27,7 +27,7 @@ This gives users two supported acquisition paths without multiplying release imp
 | Deno | `deno run -A npm:tokentopper@latest` | Executes the npm artifact through Deno's npm compatibility layer |
 | Nix | `nix run github:Kalmantic/tokentopper` | Builds the repository flake with Node.js 24 and the locked npm graph |
 | JSR | `@openfactoryai/tokentopper` | Source module and CLI export; publication awaits JSR scope authorization |
-| Claude + Codex Agent Skill | `npx tokentopper@latest skill install` | One portable, consent-gated skill copied from the npm artifact |
+| Claude + Codex + Gemini Agent Skill | `npx tokentopper@latest skill install` | One portable, consent-gated skill copied from the npm artifact |
 
 `pnpm dlx` and `bunx` are not separate registry publications. They resolve npm
 packages and their `bin` entry. Deno can likewise consume the npm artifact directly.

@@ -14,6 +14,7 @@ await build({
   platform: "node",
   format: "esm",
   target: "node22",
+  external: ["bun:sqlite"],
   sourcemap: false,
   legalComments: "none",
 });

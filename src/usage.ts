@@ -286,11 +286,10 @@ async function openSQLiteReadOnly(path: string): Promise<SQLiteReader> {
     };
   } catch (nodeError) {
     // Bun deliberately does not implement node:sqlite, but its native driver is
-    // available in bunx and compiled executables. Keep this import indirect so
-    // Node, Deno, TypeScript, and esbuild do not need to resolve a Bun builtin.
+    // available in bunx and compiled executables. The literal specifier lets JSR
+    // analyze and preserve the runtime-only import when publishing source.
     if (!process.versions.bun) throw nodeError;
-    const bunSQLite = "bun:sqlite";
-    const { Database } = await import(bunSQLite) as {
+    const { Database } = await import("bun:sqlite") as {
       Database: new (filename: string, options: { readonly: boolean; create: boolean }) => {
         query: (sql: string) => { all: () => OpenCodeRow[] };
         close: () => void;

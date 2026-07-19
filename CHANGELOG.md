@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.4.0...tokentopper-v0.4.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* handle Deno release age gate ([#24](https://github.com/Kalmantic/tokentopper/issues/24)) ([7221126](https://github.com/Kalmantic/tokentopper/commit/722112682d0692bba44dd95610b136a9598128ff))
+* verify live distribution channels ([#22](https://github.com/Kalmantic/tokentopper/issues/22)) ([904d887](https://github.com/Kalmantic/tokentopper/commit/904d887ba85acf40b0f753e9dc4ee5b889d7b416))
+
 ## [0.4.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.3.0...tokentopper-v0.4.0) (2026-07-18)
 
 

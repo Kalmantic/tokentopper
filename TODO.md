@@ -63,6 +63,8 @@ npm remains the primary channel because it already supports `npx`, global instal
 - [x] Improve the README install section with `npx tokentopper@latest` as the primary path and global installation as an optional path.
 - [x] Add troubleshooting for Node version, permissions, local data locations, Deno's age gate, OpenCode SQLite, sync auth, and network-free scoring.
 - [x] Evaluate standalone executables for Linux, macOS, and Windows. Native Bun archives include manifests, SHA-256 sidecars, and CycloneDX SBOMs, then pass clean-extraction Claude, Codex, OpenCode SQLite, filesystem discovery, Ed25519, config permissions, Agent Skill, and mocked-sync checks on all three operating systems.
+- [x] Rebuild standalone release candidates from immutable tags, verify the complete three-platform set, create keyless provenance, retain it for signing, and prohibit unsigned public attachment.
+- [x] Document standalone artifact rollback, removal, credential revocation, and fix-forward handling.
 - [ ] If standalone executables pass evaluation, publish versioned GitHub Release archives plus SHA-256 checksums and an SBOM.
 - [ ] After stable standalone releases exist, add a Homebrew tap for macOS/Linux and Scoop manifests for Windows.
 - [ ] Consider WinGet only after signing and update automation are reliable.

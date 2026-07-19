@@ -30,7 +30,7 @@
             npmConfigHook = pkgs.importNpmLock.npmConfigHook;
 
             meta = {
-              description = "Professional AI Usage Index for Claude Code and Codex";
+              description = "Professional AI Usage Index for Claude Code, Codex, and OpenCode";
               homepage = "https://openfactoryai.com/tools/tokentopper/";
               license = pkgs.lib.licenses.mit;
               mainProgram = "tokentopper";

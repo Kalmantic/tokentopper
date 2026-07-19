@@ -29,6 +29,7 @@
     "standalone:check": "node scripts/standalone-check.mjs",
     "standalone:package": "node scripts/package-standalone.mjs",
     "standalone:archive-check": "node scripts/standalone-archive-check.mjs",
+    "standalone:candidates-check": "node scripts/verify-standalone-candidate-set.mjs",
     "check": "npm run workflow:check && npm run typecheck && npm test && npm run pack:check",
     "dev": "node --experimental-strip-types src/cli.ts",
     "prepublishOnly": "npm run check"

@@ -15,8 +15,10 @@ const workflows = new Map(
 
 const release = workflows.get("release.yml");
 const jsr = workflows.get("jsr.yml");
+const standaloneCandidates = workflows.get("standalone-candidates.yml");
 assert(release, "release.yml is missing");
 assert(jsr, "jsr.yml is missing");
+assert(standaloneCandidates, "standalone-candidates.yml is missing");
 
 function job(source, name) {
   const marker = `\n  ${name}:\n`;
@@ -40,6 +42,16 @@ for (const [name, source] of [["release.yml", release], ["jsr.yml", jsr]]) {
   assert.match(source, /\npermissions: \{\}\n/, `${name} must deny permissions at workflow scope`);
   assert.doesNotMatch(source, /^\s+cache:\s+npm\s*$/m, `${name} must not reuse an npm dependency cache`);
 }
+
+assert.match(standaloneCandidates, /\npermissions: \{\}\n/, "standalone-candidates.yml must deny permissions at workflow scope");
+assert.doesNotMatch(standaloneCandidates, /^\s+cache:\s+npm\s*$/m, "standalone release candidates must not reuse an npm dependency cache");
+const candidateBuild = job(standaloneCandidates, "build");
+assert.match(candidateBuild, /\n          package-manager-cache: false\n/, "standalone candidate builds must disable package-manager caching");
+assert.doesNotMatch(candidateBuild, /\n      id-token: write\n/, "standalone candidate builds must not receive an OIDC identity");
+const candidateAttest = job(standaloneCandidates, "attest");
+assert.match(candidateAttest, /\n      id-token: write\n/, "standalone candidate attestation must mint a short-lived OIDC identity");
+assert.match(candidateAttest, /\n      attestations: write\n/, "standalone candidate attestation must write provenance");
+assert.doesNotMatch(standaloneCandidates, /\bgh release upload\b/, "unsigned standalone candidates must not be attached to a public release");
 
 for (const name of ["publish", "recover-release", "publish-prerelease"]) {
   const source = job(release, name);

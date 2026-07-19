@@ -40,7 +40,7 @@ writeFileSync(resolve(directory, "manifest.json"), JSON.stringify({
   platform: os,
   arch,
   runtime: { name: "bun", version: Bun.version },
-  sourceCommit: process.env.GITHUB_SHA || null,
+  sourceCommit: process.env.TOKENTOPPER_SOURCE_COMMIT || process.env.GITHUB_SHA || null,
 }, null, 2) + "\n");
 
 console.log(executable);

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.4.1...tokentopper-v0.4.2) (2026-07-19)
+
+
+### Bug Fixes
+
+* document compatibility boundaries ([#26](https://github.com/Kalmantic/tokentopper/issues/26)) ([0b338c4](https://github.com/Kalmantic/tokentopper/commit/0b338c462f8a4ce573603b89f952320a1b879200))
+
 ## [0.4.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.4.0...tokentopper-v0.4.1) (2026-07-19)
 
 

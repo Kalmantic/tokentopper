@@ -73,7 +73,10 @@ jobs:
           test "$(deno run -A dist/cli.js --version)" = "$(node -p "require('./package.json').version")"
           deno check src/mod.ts
       - name: Validate the JSR package
-        run: npm exec --yes --package=jsr@0.14.3 -- jsr publish --dry-run
+        run: |
+          output="$(npm exec --yes --package=jsr@0.14.3 -- jsr publish --dry-run 2>&1)"
+          printf '%s\n' "$output"
+          ! grep -Fq 'warning[unanalyzable-dynamic-import]' <<< "$output"
       - name: Verify the Nix package and app
         run: |
           nix flake check --print-build-logs

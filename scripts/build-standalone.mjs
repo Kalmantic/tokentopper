@@ -31,7 +31,7 @@ if (!result.success) {
 
 // The executable stays self-contained for usage/reporting. Agent Skill source is
 // intentionally shipped beside it so users can inspect the exact instructions
-// before installing them into Claude or Codex.
+// before installing them into Claude, Codex, or Gemini CLI.
 cpSync(resolve(root, "skills"), resolve(directory, "skills"), { recursive: true });
 writeFileSync(resolve(directory, "manifest.json"), JSON.stringify({
   schemaVersion: 1,

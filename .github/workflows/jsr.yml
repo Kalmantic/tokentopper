@@ -23,6 +23,41 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.3
       - run: npm ci
       - run: npm run check
-      - run: npm exec --yes --package=jsr@0.14.3 -- jsr publish
+      - name: Resolve and confirm the JSR version
+        id: package
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "$version" = "$(node -p "require('./jsr.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Check whether the JSR version is published
+        id: registry
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          set +e
+          node scripts/verify-jsr-release.mjs "$VERSION" --status
+          jsr_exit_code="$?"
+          set -e
+          case "$jsr_exit_code" in
+            0) echo "published=true" >> "$GITHUB_OUTPUT" ;;
+            2) echo "published=false" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$jsr_exit_code" ;;
+          esac
+      - name: Publish with GitHub OIDC
+        if: steps.registry.outputs.published != 'true'
+        run: npm exec --yes --package=jsr@0.14.3 -- jsr publish
+      - name: Verify public JSR metadata, modules, and npm compatibility
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+        run: node scripts/verify-jsr-release.mjs "$VERSION"
+      - name: Verify the JSR API and CLI through Deno
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          deno eval "const api = await import('jsr:@openfactoryai/tokentopper@${VERSION}'); if (typeof api.aggregate !== 'function' || typeof api.indexFor !== 'function') throw new Error('JSR API exports are missing')"
+          test "$(deno run -A "jsr:@openfactoryai/tokentopper@$VERSION/cli" --version)" = "$VERSION"

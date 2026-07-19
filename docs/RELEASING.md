@@ -82,3 +82,9 @@ Post-release verification for an exact version:
 node scripts/verify-release.mjs <version>
 node scripts/verify-github-release-assets.mjs <version>
 ```
+
+JSR publication is idempotent: the workflow checks immutable registry metadata
+before publishing, then verifies export-module hashes, the npm-compatibility
+tarball integrity, and Deno API/CLI execution. After correcting external scope
+authorization, rerun **Publish JSR** from `main`; an existing version is verified
+without attempting to overwrite it.

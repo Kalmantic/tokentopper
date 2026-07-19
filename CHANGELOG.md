@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.5.1...tokentopper-v0.6.0) (2026-07-19)
+
+
+### Features
+
+* **usage:** add Gemini CLI support ([#50](https://github.com/Kalmantic/tokentopper/issues/50)) ([b7c163a](https://github.com/Kalmantic/tokentopper/commit/b7c163abfcdcfcc9d5d874f8e585c450adca2025))
+
+
+### Bug Fixes
+
+* **nix:** enable structured attributes ([#47](https://github.com/Kalmantic/tokentopper/issues/47)) ([73aac3c](https://github.com/Kalmantic/tokentopper/commit/73aac3cf05ee207f5aac050996f65fe4148f2e97))
+
 ## [0.5.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.5.0...tokentopper-v0.5.1) (2026-07-19)
 
 

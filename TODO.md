@@ -5,7 +5,7 @@ Goal: make TokenTopper easy to install, safe to publish, and verifiably usable o
 ## Current baseline
 
 - [x] Publish `tokentopper` on npm.
-- [x] Publish `0.4.1` with the complete Professional AI Usage Index description.
+- [x] Publish `0.4.1` with the complete Professional AI Usage Index description; `0.4.2` is the current provenance-backed verified release.
 - [x] Document Claude Code, Codex, and OpenCode as supported today.
 - [x] Label Gemini CLI, GitHub Copilot, and other untested tools as roadmap items.
 - [ ] Confirm every npm access token exposed during early releases is revoked in the npm account. The repository has no npm token secret and uses OIDC.
@@ -88,9 +88,8 @@ Exit condition: each supported install command is automated, tested in a clean e
 1. Authorize the existing JSR OIDC workflow at the `@openfactoryai` scope and publish the current version.
 2. Enable GitHub Actions for the API and website repositories at the Kalmantic organization level (GitHub issue #16).
 3. Add API/site deployment workflows with post-deploy verification once Actions is enabled.
-4. Add troubleshooting and compatibility documentation for every supported local data format.
-5. Research Gemini CLI and GitHub Copilot one format at a time, with fixtures before release.
-6. Prototype standalone executables only if demand justifies the distribution gate.
+4. Research Gemini CLI and GitHub Copilot one format at a time, with fixtures before release.
+5. Prototype standalone executables only if demand justifies the distribution gate.
 
 ## Distribution definition of done
 

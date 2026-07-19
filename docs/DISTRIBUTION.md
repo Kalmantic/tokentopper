@@ -55,8 +55,11 @@ then verifies immutable JSR metadata, every exported module checksum, the genera
 npm-compatibility tarball integrity, and Deno API/CLI execution.
 
 The repository flake makes `nix run` available immediately. Inclusion in the central
-Nixpkgs collection is a separate upstream contribution made after a stable tagged
-release has been verified.
+Nixpkgs collection is prepared from the current stable tag in
+`nix/nixpkgs-package.nix`. A path-scoped workflow injects that expression into a
+current Nixpkgs checkout, requires a sandboxed source build, and runs the installed
+CLI plus its privacy-safe JSON smoke test before the expression is proposed
+upstream.
 
 ## Why not more channels yet
 

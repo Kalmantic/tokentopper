@@ -28,8 +28,9 @@ By model
   claude-sonnet-4          200.0M   $384.00
 ```
 
-No signup is required for a local score. TokenTopper never reads prompt or response
-content, source code, file paths, or branch names.
+No signup is required for a local score. TokenTopper reads local usage records but
+does not retain or transmit prompt or response content, source code, file paths, or
+branch names.
 
 ## Install and run
 
@@ -106,9 +107,9 @@ Your local **Claude Code** transcripts in `~/.claude/projects` (and
 attributes cost per model, and derives your run-rate, active days, sessions, and
 tool calls. More terminals are on the roadmap.
 
-**It never reads prompt or response content, file paths, or branch names.** Only
-aggregate counts, model names, and dates are computed, and nothing leaves your
-machine until you run `export` or `sync`.
+**It does not retain or transmit prompt or response content, file paths, or branch
+names.** Only aggregate counts, model names, and dates are kept, and nothing leaves
+your machine until you run `export` or `sync`.
 
 ## signed.json
 
@@ -173,6 +174,8 @@ The automated release process and recovery steps are documented in
 [`docs/RELEASING.md`](docs/RELEASING.md). Supported distribution channels and
 the standalone-executable adoption gate are documented in
 [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
+Exact local data formats, privacy boundaries, runtime limitations, and common fixes
+are documented in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
 Growth experiments and the path from useful CLI to repeatable discovery are tracked
 in [`docs/GROWTH.md`](docs/GROWTH.md). Contributions are welcome; start with

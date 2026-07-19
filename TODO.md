@@ -14,7 +14,7 @@ Goal: make TokenTopper easy to install, safe to publish, and verifiably usable o
 ## P0: make every package verifiable
 
 - [x] Add `typecheck`, `test`, `check`, and `pack:check` package scripts.
-- [x] Add fixture-based tests for Claude Code and Codex usage parsing.
+- [x] Add fixture-based tests for Claude Code, Codex, and OpenCode usage parsing.
 - [x] Add CLI smoke tests for `--help`, `--version`, default output, `export`, and a safe mocked `sync`.
 - [x] Test the packed tarball, not only the source tree: run `npm pack`, install it in a temporary directory, and execute its binary.
 - [x] Assert that the tarball contains only `dist`, `README.md`, `LICENSE`, and package metadata.
@@ -59,7 +59,7 @@ Exit condition: merging an approved release PR creates the tag, GitHub release, 
 npm remains the primary channel because it already supports `npx`, global installs, `pnpm dlx`, and compatible npm-registry clients. Add more channels only when they improve installation for users who do not have Node.
 
 - [x] Improve the README install section with `npx tokentopper@latest` as the primary path and global installation as an optional path.
-- [ ] Add a troubleshooting section for Node version, permissions, local data locations, and network-free scoring.
+- [x] Add troubleshooting for Node version, permissions, local data locations, Deno's age gate, OpenCode SQLite, sync auth, and network-free scoring.
 - [ ] Evaluate standalone executables for Linux, macOS, and Windows. Confirm the packaging approach works with filesystem discovery, Ed25519 keys, and native platform paths before adopting it.
 - [ ] If standalone executables pass evaluation, publish versioned GitHub Release archives plus SHA-256 checksums and an SBOM.
 - [ ] After stable standalone releases exist, add a Homebrew tap for macOS/Linux and Scoop manifests for Windows.
@@ -79,7 +79,7 @@ Exit condition: each supported install command is automated, tested in a clean e
 - [x] Show a clear support matrix: Claude Code, Codex, and OpenCode supported; other tools labeled roadmap until tested.
 - [x] Add OpenCode ingestion with fixtures and parity tests.
 - [ ] Research Gemini CLI and GitHub Copilot data formats before promising support dates.
-- [ ] Add a public compatibility document explaining which local files are read and which data can leave the machine.
+- [x] Add a public compatibility document explaining which local files are read and which data can leave the machine.
 - [x] Add privacy-safe release health checks for registry provenance and clean installation across supported runtimes.
 - [ ] Add operational monitoring for sync API errors and opt-in user feedback.
 

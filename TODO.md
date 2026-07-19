@@ -5,7 +5,7 @@ Goal: make TokenTopper easy to install, safe to publish, and verifiably usable o
 ## Current baseline
 
 - [x] Publish `tokentopper` on npm.
-- [x] Publish `0.4.1` with the complete Professional AI Usage Index description; `0.4.2` is the current provenance-backed verified release.
+- [x] Publish `0.4.1` with the complete Professional AI Usage Index description; `0.5.0` is the current provenance-backed verified release.
 - [x] Document Claude Code, Codex, and OpenCode as supported today.
 - [x] Label Gemini CLI, GitHub Copilot, and other untested tools as roadmap items.
 - [ ] Confirm every npm access token exposed during early releases is revoked in the npm account. The repository has no npm token secret and uses OIDC.

@@ -11,17 +11,17 @@
 
 buildNpmPackage (finalAttrs: {
   pname = "tokentopper";
-  version = "0.6.0";
+  version = "0.6.1";
   __structuredAttrs = true;
 
   src = fetchFromGitHub {
     owner = "Kalmantic";
     repo = "tokentopper";
     tag = "tokentopper-v${finalAttrs.version}";
-    hash = "sha256-vQu6zjT72CNmTJEn4iz4cChz3PS7xgdyNkc7gXPN6zk=";
+    hash = lib.fakeHash;
   };
 
-  npmDepsHash = "sha256-fRpS3/PkuWEhm4X9aIMbyRmTD+yeGuC0+kkdsAe0ew0=";
+  npmDepsHash = lib.fakeHash;
 
   doInstallCheck = true;
   nativeInstallCheckInputs = [

@@ -50,6 +50,7 @@ Exit condition: a clean checkout passes build, tests, and packed-binary smoke te
 - [ ] Add a dedicated `next` or `beta` workflow before publishing the first prerelease.
 - [x] Require the full P0/P1 package checks before the publish job can run.
 - [x] Verify the registry after publication: version, dist-tag, description, integrity, provenance, install, and CLI execution.
+- [x] Re-download GitHub Release assets and verify the tarball matches npm integrity, its SHA-256 sidecar, and its CycloneDX SBOM metadata.
 - [x] Add a release runbook covering failed jobs, npm deprecation of a bad version, and dist-tag repair. Never attempt to overwrite a published version.
 
 Exit condition: merging an approved release PR creates the tag, GitHub release, provenance-backed npm release, and verification report without a local credential.

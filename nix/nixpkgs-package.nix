@@ -18,7 +18,7 @@ buildNpmPackage (finalAttrs: {
     owner = "Kalmantic";
     repo = "tokentopper";
     tag = "tokentopper-v${finalAttrs.version}";
-    hash = lib.fakeHash;
+    hash = "sha256-vQu6zjT72CNmTJEn4iz4cChz3PS7xgdyNkc7gXPN6zk=";
   };
 
   npmDepsHash = lib.fakeHash;

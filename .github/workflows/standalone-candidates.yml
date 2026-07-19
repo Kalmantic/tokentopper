@@ -1,0 +1,133 @@
+name: Standalone release candidates
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable tokentopper-v<version> tag
+        required: true
+        type: string
+      version:
+        description: Exact package version at the tag
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: standalone-candidates-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build candidate / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+      - name: Prove the immutable tag and version
+        id: release
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "$RELEASE_TAG" = "tokentopper-v$version"
+          if test -n "$REQUESTED_VERSION"; then test "$REQUESTED_VERSION" = "$version"; fi
+          source_sha="$(git rev-parse HEAD)"
+          test "$source_sha" = "$(git rev-list -n 1 "$RELEASE_TAG")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "source-sha=$source_sha" >> "$GITHUB_OUTPUT"
+      - run: npm ci
+      - run: npm run check
+      - name: Build and verify the native candidate
+        id: package
+        shell: bash
+        env:
+          TOKENTOPPER_SOURCE_COMMIT: ${{ steps.release.outputs.source-sha }}
+        run: |
+          binary="$(npm run --silent standalone:build)"
+          npm run standalone:check -- "$binary"
+          archive="$(npm run --silent standalone:package -- "$binary")"
+          npm run standalone:archive-check -- "$archive"
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: standalone-candidate-${{ runner.os }}-${{ steps.release.outputs.source-sha }}
+          path: |
+            standalone-artifacts/*.tar.gz
+            standalone-artifacts/*.zip
+            standalone-artifacts/*.sha256
+            standalone-artifacts/*.manifest.json
+            standalone-artifacts/*.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
+  attest:
+    name: Attest immutable candidate set
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+      - name: Resolve immutable release identity
+        id: release
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "$RELEASE_TAG" = "tokentopper-v$version"
+          if test -n "$REQUESTED_VERSION"; then test "$REQUESTED_VERSION" = "$version"; fi
+          source_sha="$(git rev-parse HEAD)"
+          test "$source_sha" = "$(git rev-list -n 1 "$RELEASE_TAG")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "source-sha=$source_sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: standalone-candidate-*-${{ steps.release.outputs.source-sha }}
+          path: standalone-candidates
+          merge-multiple: true
+      - name: Verify the complete candidate set
+        run: npm run standalone:candidates-check -- standalone-candidates "${{ steps.release.outputs.version }}" "${{ steps.release.outputs.source-sha }}"
+      - name: Create keyless SLSA build provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: |
+            standalone-candidates/*.tar.gz
+            standalone-candidates/*.zip
+      - name: Verify repository provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          for archive in standalone-candidates/*.tar.gz standalone-candidates/*.zip; do
+            gh attestation verify "$archive" --repo "$GITHUB_REPOSITORY"
+          done

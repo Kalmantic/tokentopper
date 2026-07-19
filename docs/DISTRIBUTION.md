@@ -91,9 +91,25 @@ infrastructure, and immediately verifies every archive against this repository.
 This privileged job is deliberately excluded from pull requests so untrusted code
 never receives an OIDC token or attestation write access.
 
-Prototype archives remain short-lived CI artifacts rather than release downloads.
-The remaining promotion gates are macOS signing/notarization, Windows Authenticode
-signing, immutable-tag release attachment and provenance, public post-download
-verification, and documented artifact rollback/revocation.
+Every GitHub Release now starts a separate candidate workflow from the immutable
+release tag. It repeats the native build and full clean-archive checks on all three
+operating systems, rejects an incomplete or mixed-commit candidate set, creates
+keyless provenance for the exact archives, and retains them as private Actions
+artifacts for 30 days. It deliberately has no permission or command to attach the
+unsigned candidates to the public GitHub Release.
+
+Prototype and release-candidate archives remain Actions artifacts rather than
+public downloads. The remaining promotion gates are macOS signing/notarization,
+Windows Authenticode signing, signed release attachment, and public post-download
+verification.
+
+If a future standalone artifact is compromised or incorrectly signed, disable the
+standalone publication job first, remove only the affected binary assets and their
+sidecars from the GitHub Release, and leave the immutable tag, source archive, npm
+release, and incident record intact. Publish a corrected new version; never replace
+an archive under an existing version. Revoke the affected Apple or Windows signing
+identity with its provider, document the affected versions and hashes in a security
+advisory and release notes, and regenerate Homebrew/Scoop metadata only from the
+new verified release. npm remains the rollback installation path throughout.
 
 Until that gate is met, npm plus audited GitHub Release assets is the smaller and more reliable distribution system.

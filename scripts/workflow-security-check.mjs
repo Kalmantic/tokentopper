@@ -65,6 +65,13 @@ const assetJob = job(release, "release-assets");
 assert.match(assetJob, /\n          package-manager-cache: false\n/, "release-assets must disable package-manager caching");
 assert.doesNotMatch(assetJob, /\n      id-token: write\n/, "release-assets must not receive an OIDC identity");
 
+const nixMirrorJob = job(release, "update-nix-mirror");
+assert.match(nixMirrorJob, /\n    needs: \[release-please, release-assets\]\n/, "Nix mirror updates must wait for verified release assets");
+assert.match(nixMirrorJob, /\n          persist-credentials: false\n/, "Nix mirror checkouts must not persist a credential");
+assert.match(nixMirrorJob, /\n          GH_TOKEN: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}\n/, "Nix mirror PRs must use only the repository-scoped GitHub automation token");
+assert.doesNotMatch(nixMirrorJob, /\n      id-token: write\n/, "Nix mirror updates must not receive an OIDC identity");
+assert.doesNotMatch(nixMirrorJob, /\bnpm publish\b|\bjsr publish\b/, "Nix mirror updates must not publish to a registry");
+
 const jsrPublish = job(jsr, "publish");
 assert.match(jsrPublish, /\n    environment: jsr\n/, "JSR publish must use the protected jsr environment");
 assert.match(jsrPublish, /\n      id-token: write\n/, "JSR publish must mint a short-lived OIDC identity");

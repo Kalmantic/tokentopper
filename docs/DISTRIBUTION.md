@@ -58,7 +58,10 @@ The repository flake makes `nix run` available immediately. Inclusion in the cen
 Nixpkgs collection is prepared from the current stable tag in
 `nix/nixpkgs-package.nix`. A path-scoped workflow injects that expression into a
 current Nixpkgs checkout, requires a sandboxed source build, and runs the installed
-CLI plus its privacy-safe JSON smoke test. The central-package submission is tracked
+CLI plus its privacy-safe JSON smoke test. Each verified stable release also computes
+the new source and npm dependency hashes with `nix-update` and opens a review PR for
+the mirror; no package or central-repository change is published automatically. The
+central-package submission is tracked
 in [NixOS/nixpkgs#543426](https://github.com/NixOS/nixpkgs/pull/543426).
 
 ## Why not more channels yet

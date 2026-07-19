@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.5.0...tokentopper-v0.5.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* **distro:** stage immutable standalone release candidates ([#42](https://github.com/Kalmantic/tokentopper/issues/42)) ([0a41595](https://github.com/Kalmantic/tokentopper/commit/0a4159544a2add018d71ad7805767adff820781c))
+* **test:** follow package version in release fixtures ([#44](https://github.com/Kalmantic/tokentopper/issues/44)) ([6dee0e0](https://github.com/Kalmantic/tokentopper/commit/6dee0e008b7d3f10973fd172ae32bbb2377d2bcb))
+
 ## [0.5.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.4.2...tokentopper-v0.5.0) (2026-07-19)
 
 

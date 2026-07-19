@@ -98,13 +98,19 @@ jobs:
       - run: npm ci
       - name: Build native standalone prototype
         shell: bash
-        run: echo "binary=$(npm run --silent standalone:build)" >> "$GITHUB_OUTPUT"
+        run: |
+          binary="$(npm run --silent standalone:build)"
+          test -n "$binary"
+          echo "binary=$binary" >> "$GITHUB_OUTPUT"
         id: build
       - name: Verify parsers, local files, signing, skills, and mocked sync
         run: npm run standalone:check -- "${{ steps.build.outputs.binary }}"
       - name: Package archive, manifest, checksum, and SBOM
         shell: bash
-        run: echo "archive=$(npm run --silent standalone:package -- '${{ steps.build.outputs.binary }}')" >> "$GITHUB_OUTPUT"
+        run: |
+          archive="$(npm run --silent standalone:package -- '${{ steps.build.outputs.binary }}')"
+          test -n "$archive"
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
         id: package
       - name: Verify clean archive extraction and runtime behavior
         run: npm run standalone:archive-check -- "${{ steps.package.outputs.archive }}"

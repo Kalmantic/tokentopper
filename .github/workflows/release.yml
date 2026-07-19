@@ -110,6 +110,100 @@ jobs:
           RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
         run: node scripts/verify-github-release-assets.mjs "$RELEASE_VERSION"
 
+  update-nix-mirror:
+    name: Prepare Nix mirror update
+    needs: [release-please, release-assets]
+    if: needs.release-please.outputs.release-created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: NixOS/nixpkgs
+          ref: master
+          path: .nixpkgs
+          fetch-depth: 1
+          filter: blob:none
+          persist-credentials: false
+      - uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
+      - name: Validate the stable release version
+        env:
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: |
+          node -e "if(!/^\\d+\\.\\d+\\.\\d+$/.test(process.env.RELEASE_VERSION)) throw new Error('not a stable SemVer: '+process.env.RELEASE_VERSION)"
+      - name: Compute the Nix source and dependency hashes
+        env:
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: |
+          package_path=".nixpkgs/pkgs/by-name/to/tokentopper/package.nix"
+          mkdir -p "$(dirname "$package_path")"
+          cp nix/nixpkgs-package.nix "$package_path"
+          (
+            cd .nixpkgs
+            nix shell --extra-experimental-features "nix-command flakes" path:.#nix-update \
+              -c nix-update --version="$RELEASE_VERSION" tokentopper
+          )
+          cp "$package_path" nix/nixpkgs-package.nix
+          grep -Fxe "  version = \"$RELEASE_VERSION\";" nix/nixpkgs-package.nix
+          if grep -Eq 'lib\\.fake(Hash|Sha256)|sha256-AAAA' nix/nixpkgs-package.nix; then
+            echo "nix-update left a placeholder hash" >&2
+            exit 1
+          fi
+      - name: Require a sandboxed build
+        run: nix config show sandbox | grep -Fx 'true'
+      - name: Build and smoke test the updated package
+        run: |
+          nix-instantiate .nixpkgs -A tokentopper >/dev/null
+          output="$(nix-build .nixpkgs -A tokentopper --no-out-link)"
+          test "$("$output/bin/tokentopper" --version)" = "${{ needs.release-please.outputs.release-version }}"
+          nix-build .nixpkgs -A tokentopper.tests.smoke --no-out-link
+      - name: Detect a mirror change
+        id: change
+        run: |
+          if git diff --quiet -- nix/nixpkgs-package.nix; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The Nix mirror already represents this release." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open or refresh the Nix mirror pull request
+        if: steps.change.outputs.changed == 'true'
+        env:
+          BRANCH: automation/nix-${{ needs.release-please.outputs.release-version }}
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add nix/nixpkgs-package.nix
+          git commit -m "build(nix): update tokentopper to $RELEASE_VERSION"
+          gh auth setup-git
+
+          remote_sha="$(git ls-remote --heads origin "refs/heads/$BRANCH" | awk '{print $1}')"
+          if test -n "$remote_sha"; then
+            git push --force-with-lease="refs/heads/$BRANCH:$remote_sha" origin "HEAD:refs/heads/$BRANCH"
+          else
+            git push --set-upstream origin "$BRANCH"
+          fi
+
+          existing_url="$(gh pr list --state open --head "$BRANCH" --json url --jq '.[0].url // empty')"
+          if test -n "$existing_url"; then
+            echo "Refreshed $existing_url" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "build(nix): update tokentopper to $RELEASE_VERSION" \
+              --body "Automated follow-up to the verified npm and GitHub release. The source and npm dependency hashes were computed with nix-update, followed by a sandboxed build and CLI smoke test."
+          fi
+
   recover-release:
     name: Recover npm publish and release assets
     if: github.event_name == 'workflow_dispatch' && inputs.operation == 'recover-stable'

@@ -29,6 +29,7 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
 6. `scripts/verify-release.mjs` waits for registry propagation and verifies the version, `latest` tag, description, integrity, provenance, clean installation, and CLI version.
 7. After npm verification passes, the release workflow attaches the exact npm tarball, its SHA-256 checksum, and a CycloneDX SBOM to the GitHub Release.
 8. The workflow downloads those public assets again, validates their names and sizes, verifies the checksum and SBOM metadata, and proves the mirrored tarball has the same SHA-1 and SHA-512 integrity as npm. The weekly live-distribution smoke test repeats this check.
+9. After the stable release is verified, the workflow uses `nix-update` to refresh the repository's Nixpkgs expression, performs a sandboxed build and CLI smoke test, and opens an `automation/nix-<version>` pull request for review. It does not merge the mirror change or publish to Nixpkgs.
 
 All external GitHub Actions are pinned to immutable commit SHAs. Dependabot should update those pins through reviewed pull requests rather than changing them during a release run. The publish job also pins the npm CLI version so authentication and provenance behavior do not drift unexpectedly.
 

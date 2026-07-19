@@ -29,6 +29,11 @@ This gives users two supported acquisition paths without multiplying release imp
 `bin` entry. Deno can likewise consume the npm artifact directly. These paths must
 execute the exact package version in CI before being advertised.
 
+Deno 2.9+ applies a 24-hour minimum dependency age by default. The live release
+smoke test deliberately passes `--minimum-dependency-age=0` so a new release is
+verified immediately; users can keep Deno's default gate and wait, or opt out after
+checking npm provenance.
+
 JSR is a module registry, so TokenTopper exposes pure aggregate calculation APIs at
 the default export and the executable source at `@openfactoryai/tokentopper/cli`.
 The `openfactoryai` scope and `tokentopper` package exist at JSR and are linked to

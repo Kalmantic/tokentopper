@@ -40,6 +40,9 @@ The `openfactoryai` scope and `tokentopper` package exist at JSR and are linked 
 `Kalmantic/tokentopper`. Publishing uses OIDC and no long-lived registry token. The
 remaining owner action is to authorize the triggering GitHub user as a scope member
 or disable the scope's “Restrict publishing to members” policy (GitHub issue #14).
+After authorization, the idempotent workflow publishes only a missing version and
+then verifies immutable JSR metadata, every exported module checksum, the generated
+npm-compatibility tarball integrity, and Deno API/CLI execution.
 
 The repository flake makes `nix run` available immediately. Inclusion in the central
 Nixpkgs collection is a separate upstream contribution made after a stable tagged

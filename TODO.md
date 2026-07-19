@@ -71,6 +71,7 @@ npm remains the primary channel because it already supports `npx`, global instal
 - [x] Document the evidence gate that must be met before standalone executables, Homebrew, or Scoop are adopted.
 - [x] Run a weekly clean-environment smoke test against the live npm artifact through npm, bunx, the Bun runtime, Deno, and the immutable tagged Nix flake.
 - [ ] Publish `@openfactoryai/tokentopper` to JSR after the scope owner authorizes the triggering GitHub actor (GitHub issue #14).
+- [x] Make JSR publication idempotent and add public metadata, export checksum, npm-compatibility integrity, and Deno API/CLI verification.
 
 Exit condition: each supported install command is automated, tested in a clean environment, documented, and produces the same TokenTopper version.
 

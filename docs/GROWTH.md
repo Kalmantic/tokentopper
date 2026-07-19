@@ -87,7 +87,7 @@ Relevant integrations are OpenCode ingestion, stable JSON output, a verified bad
 - [x] Align npm, GitHub, and CLI wording on Professional AI Usage Index.
 - [x] Add accurate npm keywords and GitHub topics.
 - [x] Document privacy before asking users to publish.
-- [x] Publish the verified provenance-backed npm release (completed with `0.4.1`).
+- [x] Publish the verified provenance-backed npm release (current verified release: `0.4.2`).
 - [ ] Publish the prepared JSR release after the scope-owner action in GitHub issue #14.
 - [ ] Add a website install CTA that preserves the exact `npx tokentopper@latest` command.
 - [ ] Add a visible GitHub star link after a user gets a useful result.
@@ -105,7 +105,7 @@ Relevant integrations are OpenCode ingestion, stable JSON output, a verified bad
 ### Days 31–60: ecosystem coverage
 
 - [x] Add OpenCode ingestion with fixture-based parity tests.
-- [ ] Publish a compatibility document for every supported agent and file format.
+- [x] Publish a compatibility document for every supported agent and file format.
 - [ ] Create an “AI developer setup” example that includes TokenTopper as an optional observability tool.
 - [ ] Ask maintainers of genuinely relevant coding-agent lists and setup templates for inclusion after the integration is stable.
 - [ ] Interview at least ten activated users before starting any companion package.

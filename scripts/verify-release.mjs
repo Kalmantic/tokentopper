@@ -84,13 +84,15 @@ try {
   );
   assert.equal(install.status, 0, `${install.error ?? ""}\n${install.stdout}\n${install.stderr}`);
 
-  const bin = join(installDir, "node_modules", ".bin", process.platform === "win32" ? `${name}.cmd` : name);
-  const execution = spawnSync(bin, ["--version"], {
+  const binPath = typeof published.bin === "string" ? published.bin : published.bin?.[name];
+  assert(binPath, `published ${name} bin entry is missing`);
+  const bin = join(installDir, "node_modules", name, binPath);
+  const execution = spawnSync(process.execPath, [bin, "--version"], {
     cwd: installDir,
     encoding: "utf8",
     env: { ...process.env, HOME: homeDir, USERPROFILE: homeDir },
   });
-  assert.equal(execution.status, 0, `${execution.stdout}\n${execution.stderr}`);
+  assert.equal(execution.status, 0, `${execution.error ?? ""}\n${execution.stdout}\n${execution.stderr}`);
   assert.equal(execution.stdout.trim(), expectedVersion);
 } finally {
   rmSync(temp, { recursive: true, force: true });

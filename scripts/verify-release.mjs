@@ -60,7 +60,8 @@ assert.match(published.dist?.integrity ?? "", /^sha512-/);
 assert(published.dist?.attestations?.url, "npm provenance attestation is missing");
 
 const temp = mkdtempSync(join(tmpdir(), "tokentopper-release-check-"));
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const npmCli = process.env.npm_execpath;
+const npm = npmCli ? process.execPath : process.platform === "win32" ? "npm.cmd" : "npm";
 try {
   const installDir = join(temp, "install");
   const homeDir = join(temp, "home");
@@ -69,10 +70,19 @@ try {
   writeFileSync(join(installDir, "package.json"), '{"private":true}\n');
   const install = spawnSync(
     npm,
-    ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--registry", registry, `${name}@${expectedVersion}`],
+    [
+      ...(npmCli ? [npmCli] : []),
+      "install",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund",
+      "--registry",
+      registry,
+      `${name}@${expectedVersion}`,
+    ],
     { cwd: installDir, encoding: "utf8" },
   );
-  assert.equal(install.status, 0, `${install.stdout}\n${install.stderr}`);
+  assert.equal(install.status, 0, `${install.error ?? ""}\n${install.stdout}\n${install.stderr}`);
 
   const bin = join(installDir, "node_modules", ".bin", process.platform === "win32" ? `${name}.cmd` : name);
   const execution = spawnSync(bin, ["--version"], {

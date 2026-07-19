@@ -65,11 +65,16 @@ Prototype standalone executables only when demand from users without Node.js jus
 - a Homebrew tap and Scoop manifest generated from the verified release metadata, not maintained by hand.
 
 The repository contains a Bun-based prototype, pinned to the same Bun version used
-by compatibility CI. It builds on native Linux, macOS, and Windows runners and uses
-synthetic fixtures to verify Claude, Codex, OpenCode SQLite, summary, JSON, export,
-Ed25519 key creation, configuration permissions, Agent Skill installation, and a
-local mocked sync. Prototype artifacts are short-lived CI artifacts rather than
-release downloads. This proves runtime portability without bypassing the remaining
-code-signing, archive-checksum, SBOM, and clean-install requirements.
+by compatibility CI. It builds native Linux, macOS, and Windows archives with a
+versioned manifest, SHA-256 sidecar, and CycloneDX SBOM. CI extracts each archive
+into a clean temporary directory, rejects unexpected or linked files, verifies
+every embedded hash and sidecar, and then uses synthetic fixtures to test Claude,
+Codex, OpenCode SQLite, summary, JSON, export, Ed25519 key creation, configuration
+permissions, Agent Skill installation, and a local mocked sync.
+
+Prototype archives remain short-lived CI artifacts rather than release downloads.
+The remaining promotion gates are macOS signing/notarization, Windows Authenticode
+signing, GitHub build provenance attestations, immutable-tag release attachment,
+post-download verification, and documented artifact rollback/revocation.
 
 Until that gate is met, npm plus audited GitHub Release assets is the smaller and more reliable distribution system.

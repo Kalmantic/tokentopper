@@ -89,7 +89,7 @@ Relevant integrations are OpenCode ingestion, stable JSON output, a verified bad
 - [x] Align npm, GitHub, and CLI wording on Professional AI Usage Index.
 - [x] Add accurate npm keywords and GitHub topics.
 - [x] Document privacy before asking users to publish.
-- [x] Publish the verified provenance-backed npm release (current verified release: `0.5.1`).
+- [x] Publish the verified provenance-backed npm release (current verified release: `0.6.0`).
 - [ ] Publish the prepared JSR release after the scope-owner action in GitHub issue #14.
 - [ ] Add a website install CTA that preserves the exact `npx tokentopper@latest` command.
 - [ ] Add a visible GitHub star link after a user gets a useful result.

@@ -9,6 +9,7 @@ import { after, before, test } from "node:test";
 
 const root = resolve(import.meta.dirname, "..");
 const fixtureRoot = mkdtempSync(join(tmpdir(), "tokentopper-release-operations-"));
+const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
 function run(command: string, args: string[], env = process.env) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolveRun) => {
@@ -23,7 +24,7 @@ function run(command: string, args: string[], env = process.env) {
 
 after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
 
-test("prepare-prerelease updates every package version atomically", () => {
+test("prepare-prerelease updates every package version together", () => {
   const target = join(fixtureRoot, "prepare");
   mkdirSync(target, { recursive: true });
   writeFileSync(join(target, "package.json"), '{"name":"tokentopper","version":"0.5.0","private":true}\n');
@@ -104,7 +105,7 @@ before(async () => {
   );
   writeFileSync(join(packageDir, "cli.js"), `#!/usr/bin/env node\nconsole.log(${JSON.stringify(prerelease)});\n`);
   chmodSync(join(packageDir, "cli.js"), 0o755);
-  const packed = spawnSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", outputDir], {
+  const packed = spawnSync(npm, ["pack", "--ignore-scripts", "--json", "--pack-destination", outputDir], {
     cwd: packageDir,
     encoding: "utf8",
   });
@@ -119,7 +120,9 @@ before(async () => {
 });
 
 after(async () => {
-  await new Promise<void>((resolveClose, reject) => server.close((error) => error ? reject(error) : resolveClose()));
+  if (server.listening) {
+    await new Promise<void>((resolveClose, reject) => server.close((error) => error ? reject(error) : resolveClose()));
+  }
 });
 
 test("release verifier accepts next while proving latest is preserved", async () => {

@@ -9,7 +9,6 @@ import { after, before, test } from "node:test";
 
 const root = resolve(import.meta.dirname, "..");
 const fixtureRoot = mkdtempSync(join(tmpdir(), "tokentopper-release-operations-"));
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
 function run(command: string, args: string[], env = process.env) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolveRun) => {
@@ -105,11 +104,13 @@ before(async () => {
   );
   writeFileSync(join(packageDir, "cli.js"), `#!/usr/bin/env node\nconsole.log(${JSON.stringify(prerelease)});\n`);
   chmodSync(join(packageDir, "cli.js"), 0o755);
-  const packed = spawnSync(npm, ["pack", "--ignore-scripts", "--json", "--pack-destination", outputDir], {
+  const npmCli = process.env.npm_execpath;
+  assert(npmCli, "npm_execpath is required to build the registry fixture");
+  const packed = spawnSync(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", outputDir], {
     cwd: packageDir,
     encoding: "utf8",
   });
-  assert.equal(packed.status, 0, packed.stderr);
+  assert.equal(packed.status, 0, `${packed.error ?? ""}\n${packed.stderr}`);
   const filename = JSON.parse(packed.stdout)[0].filename;
   tarball = readFileSync(join(outputDir, filename));
   integrity = `sha512-${createHash("sha512").update(tarball).digest("base64")}`;

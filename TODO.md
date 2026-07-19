@@ -5,11 +5,11 @@ Goal: make TokenTopper easy to install, safe to publish, and verifiably usable o
 ## Current baseline
 
 - [x] Publish `tokentopper` on npm.
-- [x] Publish `0.2.5` with the Professional AI Usage Index description.
-- [x] Document Claude Code and Codex as supported today.
-- [x] Document OpenCode and other AI coding tools as roadmap items.
-- [x] Revoke every npm access token exposed during the `0.2.4`/`0.2.5` release and create no replacement long-lived publishing token.
-- [x] Commit and push the `0.2.5` package metadata, README, lockfile, and CLI help changes on `agent/tokentopper-distro`.
+- [x] Publish `0.4.1` with the complete Professional AI Usage Index description.
+- [x] Document Claude Code, Codex, and OpenCode as supported today.
+- [x] Label Gemini CLI, GitHub Copilot, and other untested tools as roadmap items.
+- [ ] Confirm every npm access token exposed during early releases is revoked in the npm account. The repository has no npm token secret and uses OIDC.
+- [x] Keep package metadata, README, lockfile, CLI help, Git tag, GitHub Release, and npm aligned through Release Please.
 
 ## P0: make every package verifiable
 
@@ -40,13 +40,14 @@ Exit condition: a clean checkout passes build, tests, and packed-binary smoke te
 ## P2: automate npm releases
 
 - [x] Add a GitHub Actions npm trusted-publishing job using OIDC instead of reusable npm publish tokens.
-- [ ] Register `.github/workflows/release.yml` as the trusted publisher in npm package settings.
-- [ ] Allow GitHub Actions to create PRs at the Kalmantic organization level or add a repository-scoped `RELEASE_PLEASE_TOKEN` so Release Please can operate.
+- [x] Register `.github/workflows/release.yml` as the trusted publisher in npm package settings.
+- [x] Configure the repository-scoped `RELEASE_PLEASE_TOKEN` fallback so Release Please can operate under the current organization policy.
 - [x] Require npm provenance for every automated release.
 - [x] Restrict the GitHub `npm` deployment environment to protected branches.
 - [x] Use Release Please for this single-package repository; reconsider Changesets only if it becomes a monorepo.
 - [x] Generate release notes and a changelog from merged Conventional Commits.
-- [ ] Publish stable versions to `latest`; publish prereleases to `next` or `beta`.
+- [x] Publish stable versions to `latest`.
+- [ ] Add a dedicated `next` or `beta` workflow before publishing the first prerelease.
 - [x] Require the full P0/P1 package checks before the publish job can run.
 - [x] Verify the registry after publication: version, dist-tag, description, integrity, provenance, install, and CLI execution.
 - [x] Add a release runbook covering failed jobs, npm deprecation of a bad version, and dist-tag repair. Never attempt to overwrite a published version.
@@ -67,27 +68,29 @@ npm remains the primary channel because it already supports `npx`, global instal
 - [ ] Do not add a curl-to-shell installer until artifacts are signed, checksummed, and rollback behavior is documented.
 - [x] Document npm as the primary channel and publish its tarball, checksum, and SBOM as audited GitHub Release assets.
 - [x] Document the evidence gate that must be met before standalone executables, Homebrew, or Scoop are adopted.
+- [x] Run a weekly clean-environment smoke test against the live npm artifact through npm, bunx, the Bun runtime, Deno, and the immutable tagged Nix flake.
+- [ ] Publish `@openfactoryai/tokentopper` to JSR after the scope owner authorizes the triggering GitHub actor (GitHub issue #14).
 
 Exit condition: each supported install command is automated, tested in a clean environment, documented, and produces the same TokenTopper version.
 
 ## P4: product reach and tool coverage
 
-- [ ] Keep npm, GitHub, CLI help, and the OpenFactoryAI TokenTopper page aligned on the phrase "Professional AI Usage Index."
-- [ ] Show a clear support matrix everywhere: Claude Code and Codex supported; other tools labeled roadmap until tested.
-- [ ] Add OpenCode ingestion with fixtures and parity tests.
+- [x] Keep npm, GitHub, CLI help, and the OpenFactoryAI TokenTopper page aligned on the phrase "Professional AI Usage Index."
+- [x] Show a clear support matrix: Claude Code, Codex, and OpenCode supported; other tools labeled roadmap until tested.
+- [x] Add OpenCode ingestion with fixtures and parity tests.
 - [ ] Research Gemini CLI and GitHub Copilot data formats before promising support dates.
 - [ ] Add a public compatibility document explaining which local files are read and which data can leave the machine.
-- [ ] Add release health measures that do not weaken the privacy promise: npm downloads, install verification, sync API errors, and opt-in feedback.
+- [x] Add privacy-safe release health checks for registry provenance and clean installation across supported runtimes.
+- [ ] Add operational monitoring for sync API errors and opt-in user feedback.
 
 ## Recommended execution order
 
-1. Revoke exposed credentials and commit the already-published `0.2.5` source state.
-2. Implement `npm run check` and packed-tarball smoke tests.
-3. Add cross-platform CI.
-4. Configure npm trusted publishing and automate `0.2.6` as the first provenance-backed release.
-5. Improve npm-first installation documentation.
-6. Prototype standalone executables; proceed to Homebrew and Scoop only if the prototype is reliable.
-7. Expand supported coding agents one format at a time, with fixtures before release.
+1. Authorize the existing JSR OIDC workflow at the `@openfactoryai` scope and publish the current version.
+2. Enable GitHub Actions for the API and website repositories at the Kalmantic organization level (GitHub issue #16).
+3. Add API/site deployment workflows with post-deploy verification once Actions is enabled.
+4. Add troubleshooting and compatibility documentation for every supported local data format.
+5. Research Gemini CLI and GitHub Copilot one format at a time, with fixtures before release.
+6. Prototype standalone executables only if demand justifies the distribution gate.
 
 ## Distribution definition of done
 

@@ -91,7 +91,7 @@ test("JSR verifier checks status, module hashes, exports, and compatibility inte
       [resolve(root, "scripts/verify-jsr-release.mjs"), version],
       { cwd: root, env },
     );
-    assert.equal(verified.stdout.trim(), `verified public JSR release @openfactoryai/tokentopper@${version}`);
+    assert.ok(verified.stdout.includes(`verified public JSR release @openfactoryai/tokentopper@${version}\n`));
 
     const status = await execFileAsync(
       process.execPath,

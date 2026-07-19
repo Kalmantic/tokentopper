@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.6.0...tokentopper-v0.6.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* **jsr:** make Bun SQLite import analyzable ([#52](https://github.com/Kalmantic/tokentopper/issues/52)) ([9f5491e](https://github.com/Kalmantic/tokentopper/commit/9f5491e8588b890212520428eee9938e8c5e1919))
+
 ## [0.6.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.5.1...tokentopper-v0.6.0) (2026-07-19)
 
 

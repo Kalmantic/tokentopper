@@ -6,12 +6,39 @@ import { join } from "node:path";
 
 const name = "tokentopper";
 const expectedVersion = process.argv[2];
-assert.match(expectedVersion ?? "", /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/, "usage: verify-release.mjs <version>");
+const usage = "usage: verify-release.mjs <version> [--tag <dist-tag>] [--preserve-latest <version>]";
+assert.match(expectedVersion ?? "", /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/, usage);
+
+let expectedTag = "latest";
+let preservedLatest;
+for (let index = 3; index < process.argv.length; index += 2) {
+  const flag = process.argv[index];
+  const value = process.argv[index + 1];
+  assert(value, usage);
+  if (flag === "--tag") {
+    expectedTag = value;
+  } else if (flag === "--preserve-latest") {
+    preservedLatest = value;
+  } else {
+    assert.fail(usage);
+  }
+}
+
+assert.match(expectedTag, /^[A-Za-z][0-9A-Za-z._-]*$/, "invalid npm dist-tag");
+if (expectedTag === "latest") {
+  assert(!expectedVersion.includes("-"), "a prerelease must not be verified against latest");
+  assert.equal(preservedLatest, undefined, "--preserve-latest is only valid for a non-stable dist-tag");
+} else {
+  assert(expectedVersion.includes("-"), "a non-stable dist-tag requires a prerelease version");
+  assert.match(preservedLatest ?? "", /^\d+\.\d+\.\d+$/, "a prerelease must preserve an exact stable latest version");
+}
+
+const registry = (process.env.NPM_REGISTRY_URL || "https://registry.npmjs.org").replace(/\/$/, "");
 
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 let packument;
 for (let attempt = 1; attempt <= 12; attempt += 1) {
-  const response = await fetch(`https://registry.npmjs.org/${name}`);
+  const response = await fetch(`${registry}/${name}`);
   if (response.ok) {
     packument = await response.json();
     if (packument.versions?.[expectedVersion]) break;
@@ -21,7 +48,10 @@ for (let attempt = 1; attempt <= 12; attempt += 1) {
 
 const published = packument?.versions?.[expectedVersion];
 assert(published, `${name}@${expectedVersion} did not appear in the registry`);
-assert.equal(packument["dist-tags"]?.latest, expectedVersion, "latest dist-tag does not match the release");
+assert.equal(packument["dist-tags"]?.[expectedTag], expectedVersion, `${expectedTag} dist-tag does not match the release`);
+if (preservedLatest) {
+  assert.equal(packument["dist-tags"]?.latest, preservedLatest, "latest dist-tag changed during prerelease publication");
+}
 assert.equal(published.version, expectedVersion);
 assert.match(published.description, /Professional AI Usage Index/);
 assert.match(published.description, /Claude Code, Codex, and OpenCode/);
@@ -39,7 +69,7 @@ try {
   writeFileSync(join(installDir, "package.json"), '{"private":true}\n');
   const install = spawnSync(
     npm,
-    ["install", "--ignore-scripts", "--no-audit", "--no-fund", `${name}@${expectedVersion}`],
+    ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--registry", registry, `${name}@${expectedVersion}`],
     { cwd: installDir, encoding: "utf8" },
   );
   assert.equal(install.status, 0, `${install.stdout}\n${install.stderr}`);
@@ -56,4 +86,4 @@ try {
   rmSync(temp, { recursive: true, force: true });
 }
 
-console.log(`verified public release ${name}@${expectedVersion}`);
+console.log(`verified public release ${name}@${expectedVersion} on ${expectedTag}`);

@@ -122,15 +122,18 @@ jobs:
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         run: node -e "const p=require('./package.json'); if(p.version!==process.env.RELEASE_VERSION) throw new Error(p.version+' != '+process.env.RELEASE_VERSION)"
-      - name: Confirm the version is unpublished
+      - name: Check whether the version is published
+        id: registry
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           if npm view "tokentopper@$RELEASE_VERSION" version >/dev/null 2>&1; then
-            echo "tokentopper@$RELEASE_VERSION is already published" >&2
-            exit 1
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Publish to npm with trusted publishing
+        if: steps.registry.outputs.published != 'true'
         run: npm publish --access public --provenance
       - name: Verify the public release
         env:

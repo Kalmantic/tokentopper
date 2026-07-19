@@ -21,6 +21,7 @@
     "test": "tsx --test test/*.test.ts",
     "pack:check": "npm run build && node scripts/pack-check.mjs",
     "release:assets": "node scripts/build-release-assets.mjs",
+    "release:verify-assets": "node scripts/verify-github-release-assets.mjs",
     "standalone:build": "bun scripts/build-standalone.mjs",
     "standalone:check": "node scripts/standalone-check.mjs",
     "standalone:package": "node scripts/package-standalone.mjs",

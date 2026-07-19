@@ -37,6 +37,10 @@ jobs:
           echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
       - name: Verify npm provenance, install, and CLI
         run: node scripts/verify-release.mjs "${{ steps.release.outputs.version }}"
+      - name: Verify the public GitHub Release mirror
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/verify-github-release-assets.mjs "${{ steps.release.outputs.version }}"
       - name: Verify bunx and the Bun runtime
         working-directory: ${{ runner.temp }}
         env:

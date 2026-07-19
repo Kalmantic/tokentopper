@@ -11,7 +11,7 @@ This gives users two supported acquisition paths without multiplying release imp
 | `npx tokentopper@latest` | Most users; no persistent install | Primary | npm integrity and provenance, packed-CLI smoke test |
 | `npm install --global tokentopper` | Frequent CLI users | Supported | Same npm artifact and provenance |
 | Exact npm version, such as `npx tokentopper@<version>` | Reproducible use and CI | Supported | Immutable version plus registry integrity |
-| GitHub Release npm tarball | Auditing, mirroring, restricted environments | Supported mirror | SHA-256 checksum, SBOM, Git tag, and npm provenance |
+| GitHub Release npm tarball | Auditing, mirroring, restricted environments | Supported mirror | Public re-download, npm integrity parity, SHA-256 checksum, SBOM, Git tag, and npm provenance |
 | `pnpm dlx` and compatible npm-registry clients | Users of alternate JavaScript package managers | Best effort | They consume the npm artifact, but are not separate release channels |
 
 ## Runtime and registry matrix

@@ -96,6 +96,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.release-please.outputs.release-tag }}
         run: gh release upload "$RELEASE_TAG" release-artifacts/*
+      - name: Verify public GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.release-please.outputs.release-version }}
+        run: node scripts/verify-github-release-assets.mjs "$RELEASE_VERSION"
 
   recover-release:
     name: Recover npm publish and release assets
@@ -153,3 +158,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: gh release upload "$RELEASE_TAG" release-artifacts/* --clobber
+      - name: Verify public GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node .release-tooling/scripts/verify-github-release-assets.mjs "$RELEASE_VERSION"

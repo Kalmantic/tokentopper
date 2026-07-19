@@ -28,6 +28,7 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
 5. The same release workflow creates the Git tag and GitHub Release, checks out the tagged commit, reruns the full package gate, and publishes through npm Trusted Publishing with automatic provenance.
 6. `scripts/verify-release.mjs` waits for registry propagation and verifies the version, `latest` tag, description, integrity, provenance, clean installation, and CLI version.
 7. After npm verification passes, the release workflow attaches the exact npm tarball, its SHA-256 checksum, and a CycloneDX SBOM to the GitHub Release.
+8. The workflow downloads those public assets again, validates their names and sizes, verifies the checksum and SBOM metadata, and proves the mirrored tarball has the same SHA-1 and SHA-512 integrity as npm. The weekly live-distribution smoke test repeats this check.
 
 All external GitHub Actions are pinned to immutable commit SHAs. Dependabot should update those pins through reviewed pull requests rather than changing them during a release run. The publish job also pins the npm CLI version so authentication and provenance behavior do not drift unexpectedly.
 
@@ -79,4 +80,5 @@ Post-release verification for an exact version:
 
 ```sh
 node scripts/verify-release.mjs <version>
+node scripts/verify-github-release-assets.mjs <version>
 ```

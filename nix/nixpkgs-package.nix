@@ -20,7 +20,7 @@ buildNpmPackage (finalAttrs: {
     hash = "sha256-e6qlGlQ6Nmlxp7ZZFsz2VoVmPOfsKuuFnX8eBS9RpQ8=";
   };
 
-  npmDepsHash = lib.fakeHash;
+  npmDepsHash = "sha256-iv3S/g0Fwwl2d9tlYAcmqI7SUVIBIrJtUaecb+uEdeI=";
 
   doInstallCheck = true;
   nativeInstallCheckInputs = [

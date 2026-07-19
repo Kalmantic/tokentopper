@@ -135,10 +135,15 @@ jobs:
       - name: Publish to npm with trusted publishing
         if: steps.registry.outputs.published != 'true'
         run: npm publish --access public --provenance
+      - name: Check out current release verification tooling
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          path: .release-tooling
       - name: Verify the public release
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-        run: node scripts/verify-release.mjs "$RELEASE_VERSION"
+        run: node .release-tooling/scripts/verify-release.mjs "$RELEASE_VERSION"
       - name: Build tarball, checksum, and SBOM
         env:
           RELEASE_VERSION: ${{ inputs.version }}

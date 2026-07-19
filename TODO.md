@@ -60,7 +60,7 @@ npm remains the primary channel because it already supports `npx`, global instal
 
 - [x] Improve the README install section with `npx tokentopper@latest` as the primary path and global installation as an optional path.
 - [x] Add troubleshooting for Node version, permissions, local data locations, Deno's age gate, OpenCode SQLite, sync auth, and network-free scoring.
-- [ ] Evaluate standalone executables for Linux, macOS, and Windows. Confirm the packaging approach works with filesystem discovery, Ed25519 keys, and native platform paths before adopting it.
+- [x] Evaluate standalone executables for Linux, macOS, and Windows. Native Bun prototypes pass synthetic Claude, Codex, OpenCode SQLite, filesystem discovery, Ed25519, config permissions, Agent Skill, and mocked-sync checks on all three operating systems.
 - [ ] If standalone executables pass evaluation, publish versioned GitHub Release archives plus SHA-256 checksums and an SBOM.
 - [ ] After stable standalone releases exist, add a Homebrew tap for macOS/Linux and Scoop manifests for Windows.
 - [ ] Consider WinGet only after signing and update automation are reliable.
@@ -89,7 +89,7 @@ Exit condition: each supported install command is automated, tested in a clean e
 2. Enable GitHub Actions for the API and website repositories at the Kalmantic organization level (GitHub issue #16).
 3. Add API/site deployment workflows with post-deploy verification once Actions is enabled.
 4. Research Gemini CLI and GitHub Copilot one format at a time, with fixtures before release.
-5. Prototype standalone executables only if demand justifies the distribution gate.
+5. Obtain macOS and Windows signing identities before promoting the verified standalone prototypes to persistent release artifacts.
 
 ## Distribution definition of done
 

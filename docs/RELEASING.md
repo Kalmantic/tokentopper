@@ -36,19 +36,50 @@ Do not edit `package.json` to make an ad hoc release after Release Please is ena
 
 ## Prereleases
 
-The stable workflow publishes only to `latest`. Add a dedicated prerelease workflow before publishing beta builds. That workflow must use a prerelease version and an explicit non-stable dist-tag such as:
+The stable workflow publishes only to `latest`. Prereleases use the dedicated,
+manual `publish-next` path in the same `release.yml` file because npm permits only
+one trusted publisher per package and validates its exact workflow filename. The
+path uses the protected `npm` environment and OIDC; it never needs an npm token.
+
+Prepare and review the prerelease on a branch:
 
 ```sh
-npm publish --provenance --access public --tag next
+npm run prerelease:prepare -- 0.6.0-beta.0
+npm ci
+npm run check
 ```
 
-Never put a prerelease on `latest`.
+The preparation command accepts only prerelease SemVer and updates `package.json`,
+the root package versions in `package-lock.json`, and `jsr.json` together. Merge
+that change through a normal pull request with green CI. On the resulting protected
+commit, create and push the exact immutable tag `tokentopper-v0.6.0-beta.0`.
+
+In **Actions → Release → Run workflow**, run from `main` with:
+
+- operation: `publish-next`;
+- tag: `tokentopper-v0.6.0-beta.0`;
+- version: `0.6.0-beta.0`.
+
+The job proves the tag, package, lockfile, and JSR versions agree; records the
+current stable `latest`; runs the full package gate; publishes with
+`npm publish --provenance --access public --tag next`; verifies public provenance,
+integrity, clean installation, and CLI execution; proves `latest` did not move;
+then creates a GitHub prerelease with the tarball, checksum, and CycloneDX SBOM.
+It is safe to rerun for recovery while that exact version still owns `next`.
+
+Test a prerelease explicitly with `npx tokentopper@next --version`. Never put a
+prerelease on `latest`, and never reuse or move an immutable prerelease tag.
 
 ## Failure and recovery
 
 ### Publish failed before npm accepted the version
 
 Fix the workflow or npm trusted-publisher configuration, then rerun the failed publish job. A version may be retried only if `npm view tokentopper@<version>` confirms it does not exist.
+
+For a stable recovery, select `recover-stable` and provide the existing release tag
+and exact version. For a prerelease recovery, rerun `publish-next` with the same
+immutable tag and version. If `next` has intentionally advanced to a newer build,
+do not move it backward merely to recover old GitHub assets.
 
 ### npm accepted the version but verification failed
 

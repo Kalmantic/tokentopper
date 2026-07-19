@@ -9,6 +9,7 @@ This gives users two supported acquisition paths without multiplying release imp
 | Channel | Audience | Status | Verification |
 | --- | --- | --- | --- |
 | `npx tokentopper@latest` | Most users; no persistent install | Primary | npm integrity and provenance, packed-CLI smoke test |
+| `npx tokentopper@next` | Opt-in preview users | Supported prerelease | Explicit non-stable dist-tag, provenance, clean-install verification, and stable `latest` preservation |
 | `npm install --global tokentopper` | Frequent CLI users | Supported | Same npm artifact and provenance |
 | Exact npm version, such as `npx tokentopper@<version>` | Reproducible use and CI | Supported | Immutable version plus registry integrity |
 | GitHub Release npm tarball | Auditing, mirroring, restricted environments | Supported mirror | Public re-download, npm integrity parity, SHA-256 checksum, SBOM, Git tag, and npm provenance |
@@ -20,6 +21,7 @@ This gives users two supported acquisition paths without multiplying release imp
 | Channel | Command or package | Delivery model |
 | --- | --- | --- |
 | npm / Node.js | `npx tokentopper@latest` | Primary signed npm release |
+| npm prerelease | `npx tokentopper@next` | Opt-in preview channel; never replaces `latest` |
 | pnpm | `pnpm dlx tokentopper@latest` | Executes the same npm artifact; pinned pnpm smoke-tested weekly |
 | Bun | `bunx tokentopper@latest` | Executes the same npm artifact with Bun |
 | Deno | `deno run -A npm:tokentopper@latest` | Executes the npm artifact through Deno's npm compatibility layer |
@@ -30,6 +32,12 @@ This gives users two supported acquisition paths without multiplying release imp
 `pnpm dlx` and `bunx` are not separate registry publications. They resolve npm
 packages and their `bin` entry. Deno can likewise consume the npm artifact directly.
 These paths must execute the exact package version in CI before being advertised.
+
+Preview builds use the npm `next` dist-tag through the manually approved prerelease
+path documented in `RELEASING.md`. Automation captures and rechecks `latest` around
+publication, verifies the exact preview through a clean install, and marks its
+GitHub Release as a prerelease. Preview builds are not part of the weekly stable
+distribution smoke and are never selected by an unqualified install.
 
 Deno 2.9+ applies a 24-hour minimum dependency age by default. The live release
 smoke test deliberately passes `--minimum-dependency-age=0` so a new release is

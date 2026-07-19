@@ -47,7 +47,7 @@ Exit condition: a clean checkout passes build, tests, and packed-binary smoke te
 - [x] Use Release Please for this single-package repository; reconsider Changesets only if it becomes a monorepo.
 - [x] Generate release notes and a changelog from merged Conventional Commits.
 - [x] Publish stable versions to `latest`.
-- [ ] Add a dedicated `next` or `beta` workflow before publishing the first prerelease.
+- [x] Add a dedicated, manual `next` path inside the npm-trusted `release.yml`; require prerelease SemVer, an exact immutable tag, protected-environment approval, full package checks, provenance and clean-install verification, audited assets, and proof that `latest` is unchanged.
 - [x] Require the full P0/P1 package checks before the publish job can run.
 - [x] Verify the registry after publication: version, dist-tag, description, integrity, provenance, install, and CLI execution.
 - [x] Re-download GitHub Release assets and verify the tarball matches npm integrity, its SHA-256 sidecar, and its CycloneDX SBOM metadata.

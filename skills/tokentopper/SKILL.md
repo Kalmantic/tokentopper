@@ -1,6 +1,6 @@
 ---
 name: tokentopper
-description: Extract, summarize, sign, and optionally sync local Claude Code, Codex, and OpenCode token usage with TokenTopper. Use when a user asks about their Professional AI Usage Index, token run-rate, AI coding-agent cost, local usage breakdown, verified TokenTopper rank, or multi-machine usage aggregation.
+description: Extract, summarize, sign, and optionally sync local Claude Code, Codex, OpenCode, and Gemini CLI token usage with TokenTopper. Use when a user asks about their Professional AI Usage Index, token run-rate, AI coding-agent cost, local usage breakdown, verified TokenTopper rank, or multi-machine usage aggregation.
 ---
 
 # TokenTopper
@@ -13,7 +13,7 @@ Use the TokenTopper CLI to calculate a privacy-preserving Professional AI Usage 
 2. Run `npx tokentopper@latest json --pretty` for a machine-readable local summary, or `npx tokentopper@latest` for the human-readable report.
 3. Summarize the run-rate, tier, index, tools, and top models. Do not expose raw transcript content, file paths, hostnames, signing keys, or credentials.
 
-The CLI reads token metadata from Claude Code, Codex, and OpenCode. It does not need to read or reproduce prompts or source code to calculate the aggregate.
+The CLI reads token metadata from Claude Code, Codex, OpenCode, and Gemini CLI. It does not need to read or reproduce prompts or source code to calculate the aggregate.
 
 ## Export a signed aggregate
 
@@ -42,5 +42,5 @@ For multiple machines, repeat login and sync on each installation using the same
 - Require confirmation for export and separate confirmation for upload.
 - Never manually parse or transmit raw prompt/response text when the aggregate CLI output is sufficient.
 - Never request, display, store in project files, or commit an npm token, TokenTopper CLI token, Firebase token, or signing private key.
-- Do not broaden the scan beyond TokenTopper's documented Claude Code, Codex, and OpenCode locations.
+- Do not broaden the scan beyond TokenTopper's documented Claude Code, Codex, OpenCode, and Gemini CLI locations.
 - If no usage is found, explain which supported tools were checked and stop; do not search unrelated home-directory files.

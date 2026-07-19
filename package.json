@@ -1,7 +1,7 @@
 {
   "name": "tokentopper",
   "version": "0.5.1",
-  "description": "Professional AI Usage Index for Claude Code, Codex, and OpenCode. Measure token usage, run-rate, tier, and verified shareable rank. More AI coding tools are on the roadmap. Private by default: prompts and code never leave your machine.",
+  "description": "Professional AI Usage Index for Claude Code, Codex, OpenCode, and Gemini CLI. Measure token usage, run-rate, tier, and verified shareable rank. More AI coding tools are on the roadmap. Private by default: prompts and code never leave your machine.",
   "type": "module",
   "bin": {
     "tokentopper": "dist/cli.js"
@@ -42,6 +42,9 @@
     "codex-usage",
     "opencode",
     "opencode-usage",
+    "gemini",
+    "gemini-cli",
+    "gemini-cli-usage",
     "anthropic",
     "openai",
     "tokens",

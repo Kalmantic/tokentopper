@@ -52,7 +52,7 @@ async function build(): Promise<Aggregate | null> {
 function noData(): never {
   console.error(
     "No AI CLI usage found.\n" +
-      dim("Looked for Claude Code (~/.claude/projects), Codex (~/.codex/sessions), and OpenCode (~/.local/share/opencode).\n") +
+      dim("Looked for Claude Code, Codex, OpenCode, and Gemini CLI local usage.\n") +
       dim("Use a coding agent for a bit, then run this again."),
   );
   process.exit(1);
@@ -174,7 +174,7 @@ function doLogin(): void {
 
 function doSkillInstall(): void {
   if (!argv.includes("install")) {
-    console.log("Usage: tokentopper skill install [--claude] [--codex] [--force]");
+    console.log("Usage: tokentopper skill install [--claude] [--codex] [--gemini] [--force]");
     return;
   }
   const source = [
@@ -186,10 +186,11 @@ function doSkillInstall(): void {
     console.error("The TokenTopper skill is missing from this package.");
     process.exit(1);
   }
-  const selected = has("claude") || has("codex");
+  const selected = has("claude") || has("codex") || has("gemini");
   const targets = [
     ...(!selected || has("claude") ? [join(homedir(), ".claude", "skills", "tokentopper")] : []),
     ...(!selected || has("codex") ? [join(process.env.CODEX_HOME || join(homedir(), ".codex"), "skills", "tokentopper")] : []),
+    ...(!selected || has("gemini") ? [join(process.env.GEMINI_CLI_HOME || homedir(), ".gemini", "skills", "tokentopper")] : []),
   ];
   for (const target of targets) {
     if (existsSync(target) && !has("force")) {
@@ -204,7 +205,7 @@ function doSkillInstall(): void {
 
 function help(): void {
   console.log(`
-${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Index for Claude Code, Codex, and OpenCode.
+${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Index for Claude Code, Codex, OpenCode, and Gemini CLI.
 
 ${bold("Usage")}
   tokentopper                 Show your run-rate, tier, and Index (default)
@@ -212,7 +213,7 @@ ${bold("Usage")}
   tokentopper export          Write a signed.json you can upload
   tokentopper sync            Sign and push your usage to TokenTopper
   tokentopper login           Link this machine with your CLI token
-  tokentopper skill install   Install the Agent Skill for Claude and Codex
+  tokentopper skill install   Install the Agent Skill for Claude, Codex, and Gemini
 
 ${bold("Options")}
   --out <file>     export: output path (default signed.json)
@@ -224,12 +225,13 @@ ${bold("Options")}
   --interval <min> sync --watch: minutes between syncs (default 360)
   --claude        skill install: install only for Claude
   --codex         skill install: install only for Codex
+  --gemini        skill install: install only for Gemini CLI
   --force         skill install: replace an existing TokenTopper skill
   -v, --version    Print version
   -h, --help       Print this help
 
-Supports Claude Code, Codex, and OpenCode today; more AI coding tools are on the roadmap.
-Reads ~/.claude/projects, ~/.codex/sessions, and ~/.local/share/opencode. Only counts,
+Supports Claude Code, Codex, OpenCode, and Gemini CLI today; GitHub Copilot is on the roadmap.
+Reads supported local session stores, including ~/.gemini/tmp. Only counts,
 models, and days leave your machine, and only when you export or sync. Ranks at
 ${SITE}
 `);

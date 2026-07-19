@@ -5,7 +5,7 @@
 [![CI](https://github.com/Kalmantic/tokentopper/actions/workflows/ci.yml/badge.svg)](https://github.com/Kalmantic/tokentopper/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/tokentopper)](LICENSE)
 
-**Your Professional AI Usage Index for Claude Code, Codex, and OpenCode.** See your annual
+**Your Professional AI Usage Index for Claude Code, Codex, OpenCode, and Gemini CLI.** See your annual
 token run-rate, cost estimate, tier, and verified rank with one command.
 
 ```sh
@@ -75,7 +75,7 @@ registry publication requires the JSR scope/package to be linked to this reposit
 
 ## What it does
 
-TokenTopper is a local **Claude Code usage tracker**, **Codex token usage tracker**, and **OpenCode usage tracker**.
+TokenTopper is a local **Claude Code usage tracker**, **Codex token usage tracker**, **OpenCode usage tracker**, and **Gemini CLI usage tracker**.
 It combines coding-agent usage into one comparable score:
 
 - annualized token run-rate and estimated model cost;
@@ -94,9 +94,10 @@ not a prompt tokenizer, context-window calculator, or middleware library.
 | **Claude Code** | ✅ Supported |
 | **Codex** | ✅ Supported |
 | **OpenCode** | ✅ Supported (SQLite and JSON storage) |
-| Gemini CLI, GitHub Copilot & more | 🛣️ On the roadmap |
+| **Gemini CLI** | ✅ Supported (current JSONL session records) |
+| GitHub Copilot & more | 🛣️ On the roadmap |
 
-**Claude Code, Codex, and OpenCode are supported today. Other AI coding tools are on the roadmap.**
+**Claude Code, Codex, OpenCode, and Gemini CLI are supported today. Other AI coding tools are on the roadmap.**
 One index across every coding agent you use.
 
 ## What it reads
@@ -104,9 +105,10 @@ One index across every coding agent you use.
 Your local **Claude Code** transcripts in `~/.claude/projects` (and
 `~/.config/claude/projects`, or `$CLAUDE_CONFIG_DIR`) and your **Codex** sessions in
 `~/.codex/sessions`, plus OpenCode's `~/.local/share/opencode/opencode.db` (with
-`storage/message/**/*.json` fallback). It counts tokens (input, output, cache write, cache read),
-attributes cost per model, and derives your run-rate, active days, sessions, and
-tool calls. More terminals are on the roadmap.
+`storage/message/**/*.json` fallback), and Gemini CLI sessions below
+`~/.gemini/tmp/*/chats` (or `$GEMINI_CLI_HOME/.gemini/tmp`). It counts tokens
+(input, output, cache write, cache read), attributes cost per model, and derives
+your run-rate, active days, sessions, and tool calls. More terminals are on the roadmap.
 
 **It does not retain or transmit prompt or response content, file paths, or branch
 names.** Only aggregate counts, model names, and dates are kept, and nothing leaves
@@ -141,17 +143,17 @@ hostname or machine identifier. Its schema is `tokentopper-summary/1`.
 | `tokentopper export [--out f] [--pretty]` | Write `signed.json` |
 | `tokentopper sync [--watch] [--interval min]` | Sign and POST to TokenTopper |
 | `tokentopper login --token <t>` | Link this machine |
-| `tokentopper skill install` | Install the TokenTopper Agent Skill for Claude and Codex |
+| `tokentopper skill install` | Install the TokenTopper Agent Skill for Claude, Codex, and Gemini CLI |
 
-## Claude and Codex skill
+## Claude, Codex, and Gemini skill
 
-Install one portable, privacy-first Agent Skill into both assistants:
+Install one portable, privacy-first Agent Skill into all three assistants:
 
 ```sh
 npx tokentopper@latest skill install
 ```
 
-Use `--claude` or `--codex` for one target, and `--force` to update an existing
+Use `--claude`, `--codex`, or `--gemini` for one target, and `--force` to update an existing
 installation. The skill defaults to local inspection and requires explicit consent
 before export or upload.
 

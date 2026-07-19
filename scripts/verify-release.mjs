@@ -54,7 +54,7 @@ if (preservedLatest) {
 }
 assert.equal(published.version, expectedVersion);
 assert.match(published.description, /Professional AI Usage Index/);
-assert.match(published.description, /Claude Code, Codex, and OpenCode/);
+assert.match(published.description, /Claude Code, Codex, OpenCode, and Gemini CLI/);
 assert.match(published.description, /roadmap/i);
 assert.match(published.dist?.integrity ?? "", /^sha512-/);
 assert(published.dist?.attestations?.url, "npm provenance attestation is missing");

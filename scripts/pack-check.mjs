@@ -80,6 +80,7 @@ try {
     USERPROFILE: homeDir,
     CLAUDE_CONFIG_DIR: join(homeDir, ".claude"),
     CODEX_HOME: join(homeDir, ".codex"),
+    GEMINI_CLI_HOME: homeDir,
   };
 
   const cli = (args, options = {}) => run(process.execPath, [bin, ...args], options);
@@ -88,6 +89,8 @@ try {
   assert.match(cli(["--help"], { cwd: installDir, env }).stdout, /Professional AI Usage Index/);
   assert.match(cli(["skill", "install", "--claude"], { cwd: installDir, env }).stdout, /Installed TokenTopper skill/);
   assert.equal(existsSync(join(homeDir, ".claude", "skills", "tokentopper", "SKILL.md")), true);
+  assert.match(cli(["skill", "install", "--gemini"], { cwd: installDir, env }).stdout, /Installed TokenTopper skill/);
+  assert.equal(existsSync(join(homeDir, ".gemini", "skills", "tokentopper", "SKILL.md")), true);
 
   const fixtureDir = join(homeDir, ".claude", "projects", "pack-check");
   mkdirSync(fixtureDir, { recursive: true });
@@ -104,11 +107,32 @@ try {
       },
     })}\n`,
   );
+  const geminiFixtureDir = join(homeDir, ".gemini", "tmp", "pack-check", "chats");
+  mkdirSync(geminiFixtureDir, { recursive: true });
+  writeFileSync(
+    join(geminiFixtureDir, "session-2026-07-01T11-00-pack.jsonl"),
+    [
+      JSON.stringify({
+        sessionId: "gemini-pack-check",
+        projectHash: "pack-check",
+        startTime: "2026-07-01T11:00:00.000Z",
+        lastUpdated: "2026-07-01T11:01:00.000Z",
+      }),
+      JSON.stringify({
+        id: "gemini-pack-message",
+        timestamp: "2026-07-01T11:00:01.000Z",
+        type: "gemini",
+        model: "gemini-2.5-flash",
+        tokens: { input: 50, output: 10, cached: 20, thoughts: 5, total: 65 },
+      }),
+    ].join("\n") + "\n",
+  );
   assert.match(cli([], { cwd: installDir, env }).stdout, /TokenTopper/);
 
   const jsonSummary = JSON.parse(cli(["json", "--pretty"], { cwd: installDir, env }).stdout);
   assert.equal(jsonSummary.schema, "tokentopper-summary/1");
   assert.equal("machine" in jsonSummary, false);
+  assert.deepEqual(Object.keys(jsonSummary.byTool).sort(), ["claude", "gemini"]);
 
   const exportPath = join(temp, "signed.json");
   cli(["export", "--out", exportPath, "--pretty"], { cwd: installDir, env });

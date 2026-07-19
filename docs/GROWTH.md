@@ -9,7 +9,7 @@ Recorded on 2026-07-18, four days after the repository was created:
 - npm downloads: 1,236 lifetime, with all downloads occurring in the latest week;
 - GitHub stars: 0;
 - GitHub forks: 0;
-- supported usage sources: Claude Code, Codex, and OpenCode;
+- supported usage sources: Claude Code, Codex, OpenCode, and Gemini CLI;
 - primary install path: `npx tokentopper@latest`;
 - public destination: [openfactoryai.com/tools/tokentopper](https://openfactoryai.com/tools/tokentopper/).
 
@@ -19,7 +19,7 @@ The npm number is encouraging but should not be treated as 1,236 activated users
 
 TokenTopper owns this sentence:
 
-> Your Professional AI Usage Index for Claude Code, Codex, and OpenCode.
+> Your Professional AI Usage Index for Claude Code, Codex, OpenCode, and Gemini CLI.
 
 It should be discoverable for accurate phrases such as:
 
@@ -29,6 +29,8 @@ It should be discoverable for accurate phrases such as:
 - Codex token usage;
 - OpenCode usage tracker;
 - OpenCode token usage;
+- Gemini CLI usage tracker;
+- Gemini CLI token usage;
 - AI coding agent usage analytics;
 - developer AI usage score;
 - coding-agent leaderboard;
@@ -105,6 +107,7 @@ Relevant integrations are OpenCode ingestion, stable JSON output, a verified bad
 ### Days 31–60: ecosystem coverage
 
 - [x] Add OpenCode ingestion with fixture-based parity tests.
+- [x] Add Gemini CLI ingestion from its upstream-documented JSONL session records.
 - [x] Publish a compatibility document for every supported agent and file format.
 - [ ] Create an “AI developer setup” example that includes TokenTopper as an optional observability tool.
 - [ ] Ask maintainers of genuinely relevant coding-agent lists and setup templates for inclusion after the integration is stable.
@@ -125,7 +128,7 @@ Each guide should contain an answer in the first paragraph, the exact command, s
 
 1. How to check Claude Code token usage locally
 2. How to check Codex CLI token usage locally
-3. One usage report for Claude Code, Codex, and OpenCode
+3. One usage report for Claude Code, Codex, OpenCode, and Gemini CLI
 4. What Claude Code cache-read tokens mean for cost
 5. How TokenTopper calculates annual AI coding run-rate
 6. Professional AI Usage Index methodology and tier boundaries
@@ -153,7 +156,7 @@ One strong guide per week is enough. Update or retire pages that do not answer t
 
 - **1,000 qualified users:** README conversion, private local value, and a reliable verified-profile funnel.
 - **10,000 monthly downloads:** recurring search traffic plus a share card developers actually post.
-- **50,000 monthly downloads:** three or more supported coding agents and inclusion in relevant setup templates or guides.
+- **50,000 monthly downloads:** four or more supported coding agents and inclusion in relevant setup templates or guides.
 - **100,000 monthly downloads:** a default recommendation for measuring coding-agent usage, driven by retained usefulness rather than package fragmentation.
 
 Do not create `tokentopper-react`, an ESLint plugin, or other companion packages to inflate download counts. Split a package only when it owns a stable API, has independent users, and reduces integration cost.

@@ -6,15 +6,15 @@ Goal: make TokenTopper easy to install, safe to publish, and verifiably usable o
 
 - [x] Publish `tokentopper` on npm.
 - [x] Publish `0.4.1` with the complete Professional AI Usage Index description; `0.5.1` is the current provenance-backed verified release.
-- [x] Document Claude Code, Codex, and OpenCode as supported today.
-- [x] Label Gemini CLI, GitHub Copilot, and other untested tools as roadmap items.
+- [x] Document Claude Code, Codex, OpenCode, and Gemini CLI as supported today.
+- [x] Label GitHub Copilot and other untested tools as roadmap items.
 - [ ] Confirm every npm access token exposed during early releases is revoked in the npm account. The repository has no npm token secret and uses OIDC.
 - [x] Keep package metadata, README, lockfile, CLI help, Git tag, GitHub Release, and npm aligned through Release Please.
 
 ## P0: make every package verifiable
 
 - [x] Add `typecheck`, `test`, `check`, and `pack:check` package scripts.
-- [x] Add fixture-based tests for Claude Code, Codex, and OpenCode usage parsing.
+- [x] Add fixture-based tests for Claude Code, Codex, OpenCode, and Gemini CLI usage parsing.
 - [x] Add CLI smoke tests for `--help`, `--version`, default output, `export`, and a safe mocked `sync`.
 - [x] Test the packed tarball, not only the source tree: run `npm pack`, install it in a temporary directory, and execute its binary.
 - [x] Assert that the tarball contains only `dist`, `README.md`, `LICENSE`, and package metadata.
@@ -83,9 +83,10 @@ Exit condition: each supported install command is automated, tested in a clean e
 ## P4: product reach and tool coverage
 
 - [x] Keep npm, GitHub, CLI help, and the OpenFactoryAI TokenTopper page aligned on the phrase "Professional AI Usage Index."
-- [x] Show a clear support matrix: Claude Code, Codex, and OpenCode supported; other tools labeled roadmap until tested.
+- [x] Show a clear support matrix: Claude Code, Codex, OpenCode, and Gemini CLI supported; other tools labeled roadmap until tested.
 - [x] Add OpenCode ingestion with fixtures and parity tests.
-- [ ] Research Gemini CLI and GitHub Copilot data formats before promising support dates.
+- [x] Add Gemini CLI ingestion from its current, upstream-documented JSONL session records with fixture and packaged-runtime coverage.
+- [ ] Add GitHub Copilot only after GitHub documents a stable token schema for its session files or local session-store database; current public docs expose locations but not that schema.
 - [x] Add a public compatibility document explaining which local files are read and which data can leave the machine.
 - [x] Add privacy-safe release health checks for registry provenance and clean installation across supported runtimes.
 - [ ] Add operational monitoring for sync API errors and opt-in user feedback.
@@ -95,7 +96,7 @@ Exit condition: each supported install command is automated, tested in a clean e
 1. Authorize the existing JSR OIDC workflow at the `@openfactoryai` scope and publish the current version.
 2. Enable GitHub Actions for the API and website repositories at the Kalmantic organization level (GitHub issue #16).
 3. Add API/site deployment workflows with post-deploy verification once Actions is enabled.
-4. Research Gemini CLI and GitHub Copilot one format at a time, with fixtures before release.
+4. Track GitHub Copilot's public session schema and add it only when token fields can be fixture-tested without reverse-engineering private formats.
 5. Obtain macOS and Windows signing identities before promoting the verified standalone prototypes to persistent release artifacts.
 
 ## Distribution definition of done

@@ -61,6 +61,41 @@ native `bun:sqlite` driver under Bun. Deno still reads OpenCode's historical JSO
 fallback when no compatible SQLite API is available; use Node.js or Bun for
 complete current OpenCode database coverage.
 
+### Gemini CLI
+
+- Roots: `~/.gemini/tmp` and `$GEMINI_CLI_HOME/.gemini/tmp` when
+  `GEMINI_CLI_HOME` is set.
+- Current format: recursive JSONL session records below each project's `chats`
+  directory, including nested subagent sessions.
+- Records: Gemini messages containing the upstream `tokens` summary.
+- Fields used: timestamp, message ID, session ID, model, prompt, candidate,
+  thinking, cached, and total token counts.
+- Deduplication: later append-only updates replace earlier records with the same
+  message ID. Rewind records remove the rewound message and everything after it;
+  message checkpoints replace the in-memory message set.
+
+Gemini's prompt count includes cached input, so TokenTopper subtracts cached
+tokens from ordinary input before placing them in the cache-read bucket. Positive
+residuals in the upstream total—such as separately reported tool prompt tokens—are
+counted as input. Prompt and response content in the session records is never kept.
+The reader follows Gemini CLI's published
+[`TokensSummary`](https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/services/chatRecordingTypes.ts)
+and append-only
+[`ChatRecordingService`](https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/services/chatRecordingService.ts)
+contracts. Cost remains an estimate using standard
+[Gemini Developer API list prices](https://ai.google.dev/gemini-api/docs/pricing);
+free-tier, Vertex AI, and enterprise billing may differ.
+
+### GitHub Copilot CLI
+
+GitHub documents full session files under `~/.copilot/session-state` and a local
+SQLite session store at `~/.copilot/session-store.db`, but does not currently
+publish a stable token-field schema for either. TokenTopper therefore does not
+inspect those private formats yet. Copilot remains on the roadmap until a public
+schema or supported local export can be fixture-tested without guessing. See
+GitHub's documentation for the current
+[Copilot CLI session locations](https://docs.github.com/en/copilot/concepts/agents/copilot-cli/chronicle).
+
 ## Local data and network boundary
 
 The default `tokentopper` summary and `tokentopper json` commands make no network
@@ -90,7 +125,7 @@ the repository Nix flake instead of forcing an older Node release.
 
 1. Confirm at least one supported agent has completed a session and written usage.
 2. Check the roots above and any custom `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, or
-   `OPENCODE_DATA_DIR` value.
+   `OPENCODE_DATA_DIR`, or `GEMINI_CLI_HOME` value.
 3. Confirm the current user can read those directories and files.
 4. For current OpenCode SQLite data, run TokenTopper with Node.js 22/24 or Bun.
 

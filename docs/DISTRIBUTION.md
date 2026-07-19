@@ -63,7 +63,7 @@ in [NixOS/nixpkgs#543426](https://github.com/NixOS/nixpkgs/pull/543426).
 
 ## Why not more channels yet
 
-TokenTopper reads local Claude Code, Codex, and OpenCode data. A Docker image would isolate it from the files it needs and force users into broad host mounts, so Docker is not an appropriate end-user channel.
+TokenTopper reads local Claude Code, Codex, OpenCode, and Gemini CLI data. A Docker image would isolate it from the files it needs and force users into broad host mounts, so Docker is not an appropriate end-user channel.
 
 A curl-to-shell installer would add a high-trust bootstrap path without improving the artifact. It remains out of scope unless releases have platform-native signed executables and a documented rollback path.
 

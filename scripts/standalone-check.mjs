@@ -15,12 +15,14 @@ const home = join(root, "home");
 const claude = join(root, "claude");
 const codex = join(root, "codex");
 const opencode = join(root, "opencode");
+const geminiHome = join(root, "gemini-home");
 const sentinel = "PRIVATE_PROMPT_AND_CODE_MUST_NOT_ESCAPE";
 
 mkdirSync(home, { recursive: true });
 mkdirSync(join(claude, "projects", "fixture"), { recursive: true });
 mkdirSync(join(codex, "sessions", "2026", "07", "19"), { recursive: true });
 mkdirSync(opencode, { recursive: true });
+mkdirSync(join(geminiHome, ".gemini", "tmp", "project-hash", "chats"), { recursive: true });
 
 writeFileSync(join(claude, "projects", "fixture", "session.jsonl"), JSON.stringify({
   type: "assistant",
@@ -64,6 +66,26 @@ db.prepare("INSERT INTO message (id, session_id, data) VALUES (?, ?, ?)").run(
 );
 db.close();
 
+writeFileSync(
+  join(geminiHome, ".gemini", "tmp", "project-hash", "chats", "session-2026-07-19T12-00-fixture.jsonl"),
+  [
+    JSON.stringify({
+      sessionId: "gemini-fixture",
+      projectHash: "project-hash",
+      startTime: "2026-07-19T12:00:00.000Z",
+      lastUpdated: "2026-07-19T12:01:00.000Z",
+    }),
+    JSON.stringify({
+      id: "gemini-message",
+      timestamp: "2026-07-19T12:00:01.000Z",
+      type: "gemini",
+      model: "gemini-2.5-flash",
+      content: sentinel,
+      tokens: { input: 70, output: 12, cached: 20, thoughts: 3, total: 85 },
+    }),
+  ].join("\n") + "\n",
+);
+
 const env = {
   ...process.env,
   HOME: home,
@@ -71,6 +93,7 @@ const env = {
   CLAUDE_CONFIG_DIR: claude,
   CODEX_HOME: codex,
   OPENCODE_DATA_DIR: opencode,
+  GEMINI_CLI_HOME: geminiHome,
   NO_COLOR: "1",
 };
 
@@ -100,8 +123,9 @@ try {
   assert.equal(jsonResult.status, 0, jsonResult.stderr);
   assertPrivate(jsonResult.stdout);
   const report = JSON.parse(jsonResult.stdout);
-  assert.deepEqual(Object.keys(report.byTool).sort(), ["claude", "codex", "opencode"]);
+  assert.deepEqual(Object.keys(report.byTool).sort(), ["claude", "codex", "gemini", "opencode"]);
   assert.ok(report.byModel["gpt-5-opencode"], "compiled runtime did not read OpenCode SQLite");
+  assert.ok(report.byModel["gemini-2.5-flash"], "compiled runtime did not read Gemini CLI JSONL");
 
   const summary = await run([]);
   assert.equal(summary.status, 0, summary.stderr);
@@ -126,6 +150,7 @@ try {
   assert.equal(skill.status, 0, skill.stderr);
   assert.ok(existsSync(join(home, ".claude", "skills", "tokentopper", "SKILL.md")));
   assert.ok(existsSync(join(codex, "skills", "tokentopper", "SKILL.md")));
+  assert.ok(existsSync(join(geminiHome, ".gemini", "skills", "tokentopper", "SKILL.md")));
 
   let uploaded = "";
   let authorization = "";

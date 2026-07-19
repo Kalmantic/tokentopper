@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { DatabaseSync } from "node:sqlite";
-import { loadClaude, loadCodex, loadOpenCode } from "../src/usage";
+import { loadClaude, loadCodex, loadGemini, loadOpenCode } from "../src/usage";
 
 function fixtureDir(name: string): string {
   return mkdtempSync(join(tmpdir(), `tokentopper-${name}-`));
@@ -175,6 +175,114 @@ test("OpenCode reader combines JSON and SQLite with database records winning", a
       { model: "gpt-5", sessionId: "session-json", input: 7, output: 5, cacheRead: 0, cacheWrite: 0, costUSD: undefined },
       { model: "gpt-5-codex", sessionId: "session-db", input: 20, output: 5, cacheRead: 3, cacheWrite: 2, costUSD: 0.25 },
     ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Gemini reader follows message updates, token semantics, and rewinds", () => {
+  const root = fixtureDir("gemini");
+  try {
+    const chats = join(root, "project-hash", "chats");
+    mkdirSync(chats, { recursive: true });
+    const message = {
+      id: "gemini-message-1",
+      timestamp: "2026-07-03T12:00:00.000Z",
+      type: "gemini",
+      model: "gemini-2.5-pro",
+      content: "private response content",
+      tokens: {
+        input: 100,
+        output: 20,
+        cached: 40,
+        thoughts: 10,
+        tool: 5,
+        total: 135,
+      },
+    };
+    writeFileSync(join(chats, "session-2026-07-03T12-00-gemini.jsonl"), [
+      JSON.stringify({
+        sessionId: "gemini-session",
+        projectHash: "project-hash",
+        startTime: "2026-07-03T12:00:00.000Z",
+        lastUpdated: "2026-07-03T12:01:00.000Z",
+      }),
+      JSON.stringify({ ...message, tokens: null }),
+      JSON.stringify(message),
+      JSON.stringify({
+        id: "gemini-message-rewound",
+        timestamp: "2026-07-03T12:01:00.000Z",
+        type: "gemini",
+        model: "gemini-2.5-flash",
+        tokens: { input: 5, output: 2, cached: 0, total: 7 },
+      }),
+      JSON.stringify({ $rewindTo: "gemini-message-rewound" }),
+      "not-json",
+    ].join("\n") + "\n");
+
+    assert.deepEqual(loadGemini([root]), [
+      {
+        ts: "2026-07-03T12:00:00.000Z",
+        day: "2026-07-03",
+        tool: "gemini",
+        provider: "google",
+        model: "gemini-2.5-pro",
+        sessionId: "gemini-session",
+        input: 65,
+        output: 30,
+        cacheWrite: 0,
+        cacheRead: 40,
+        webSearch: 0,
+        webFetch: 0,
+      },
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Gemini reader restores checkpoint message sets", () => {
+  const root = fixtureDir("gemini-checkpoint");
+  try {
+    const chats = join(root, "project-hash", "chats");
+    mkdirSync(chats, { recursive: true });
+    writeFileSync(join(chats, "session-checkpoint.jsonl"), [
+      JSON.stringify({ sessionId: "original-session" }),
+      JSON.stringify({
+        id: "discarded-message",
+        timestamp: "2026-07-04T11:59:00.000Z",
+        type: "gemini",
+        model: "gemini-2.5-flash",
+        tokens: { input: 2, output: 1, total: 3 },
+      }),
+      JSON.stringify({
+        $set: {
+          sessionId: "restored-session",
+          messages: [{
+            id: "restored-message",
+            timestamp: "2026-07-04T12:00:00.000Z",
+            type: "gemini",
+            model: "gemini-2.5-flash",
+            tokens: { input: 30, output: 8, cached: 10, total: 38 },
+          }],
+        },
+      }),
+    ].join("\n") + "\n");
+
+    assert.deepEqual(loadGemini([root]), [{
+      ts: "2026-07-04T12:00:00.000Z",
+      day: "2026-07-04",
+      tool: "gemini",
+      provider: "google",
+      model: "gemini-2.5-flash",
+      sessionId: "restored-session",
+      input: 20,
+      output: 8,
+      cacheWrite: 0,
+      cacheRead: 10,
+      webSearch: 0,
+      webFetch: 0,
+    }]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

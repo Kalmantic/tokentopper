@@ -72,7 +72,7 @@ const server = createServer((request, response) => {
         [prerelease]: {
           name: "tokentopper",
           version: prerelease,
-          description: "Professional AI Usage Index for Claude Code, Codex, and OpenCode. More tools are on the roadmap.",
+          description: "Professional AI Usage Index for Claude Code, Codex, OpenCode, and Gemini CLI. More tools are on the roadmap.",
           bin: { tokentopper: "cli.js" },
           dist: {
             integrity,

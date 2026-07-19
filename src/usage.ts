@@ -7,7 +7,7 @@ import { join, basename } from "node:path";
 export interface Rec {
   ts: string;
   day: string; // YYYY-MM-DD
-  tool: "claude" | "codex" | "opencode"; // the CLI it came from
+  tool: "claude" | "codex" | "opencode" | "gemini"; // the CLI it came from
   provider: string;
   model: string;
   sessionId: string;
@@ -384,6 +384,142 @@ export async function loadOpenCode(roots = openCodeRoots()): Promise<Rec[]> {
   return [...records.values()];
 }
 
+/* ----------------------------- Gemini CLI ----------------------------- */
+// Gemini CLI records current sessions below ~/.gemini/tmp/<project>/chats.
+// GEMINI_CLI_HOME replaces the OS home directory, so its sessions live below
+// $GEMINI_CLI_HOME/.gemini/tmp. Each JSONL file is an append-only stream where
+// later records for the same message ID replace earlier versions.
+function geminiRoots(): string[] {
+  const home = process.env.GEMINI_CLI_HOME || homedir();
+  return [join(home, ".gemini", "tmp")];
+}
+
+interface GeminiTokens {
+  input?: number;
+  output?: number;
+  cached?: number;
+  thoughts?: number;
+  tool?: number;
+  total?: number;
+}
+
+interface GeminiMessage {
+  id?: string;
+  timestamp?: string;
+  type?: string;
+  model?: string;
+  tokens?: GeminiTokens | null;
+}
+
+interface GeminiRecord {
+  sessionId?: string;
+  messages?: GeminiMessage[];
+  $rewindTo?: string;
+  $set?: {
+    sessionId?: string;
+    messages?: GeminiMessage[];
+  };
+}
+
+function finiteToken(value: unknown): number {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
+
+function geminiRec(message: GeminiMessage, sessionId: string): Rec | null {
+  const tokens = message.tokens;
+  if (message.type !== "gemini" || !tokens) return null;
+
+  // Gemini's prompt count includes cached input. Keep cached tokens in their
+  // own bucket, and use totalTokenCount only for a positive residual such as
+  // tool prompt tokens that is not represented by the named fields.
+  const prompt = finiteToken(tokens.input);
+  const cacheRead = Math.min(prompt, finiteToken(tokens.cached));
+  const output = finiteToken(tokens.output) + finiteToken(tokens.thoughts);
+  const known = prompt + output;
+  const residual = Math.max(0, finiteToken(tokens.total) - known);
+  const input = Math.max(0, prompt - cacheRead) + residual;
+  if (input + output + cacheRead === 0) return null;
+
+  const ts = typeof message.timestamp === "string" ? message.timestamp : "";
+  return {
+    ts,
+    day: ts.slice(0, 10),
+    tool: "gemini",
+    provider: "google",
+    model: message.model || "unknown",
+    sessionId,
+    input,
+    output,
+    cacheWrite: 0,
+    cacheRead,
+    webSearch: 0,
+    webFetch: 0,
+  };
+}
+
+export function loadGemini(roots = geminiRoots()): Rec[] {
+  const files: string[] = [];
+  for (const root of roots) walk(root, (name) => name.endsWith(".jsonl"), files);
+  const records: Rec[] = [];
+
+  for (const file of files) {
+    let text: string;
+    try {
+      text = readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
+
+    let sessionId = basename(file, ".jsonl");
+    const messages = new Map<string, GeminiMessage>();
+    const order: string[] = [];
+    const replaceMessages = (next: GeminiMessage[]): void => {
+      messages.clear();
+      order.length = 0;
+      for (const message of next) {
+        if (!message.id) continue;
+        if (!messages.has(message.id)) order.push(message.id);
+        messages.set(message.id, message);
+      }
+    };
+
+    for (const line of text.split("\n")) {
+      if (!line.trim()) continue;
+      let raw: GeminiRecord & GeminiMessage;
+      try {
+        raw = JSON.parse(line) as GeminiRecord & GeminiMessage;
+      } catch {
+        continue;
+      }
+
+      if (typeof raw.sessionId === "string") sessionId = raw.sessionId;
+      if (Array.isArray(raw.messages)) replaceMessages(raw.messages);
+      if (raw.$set) {
+        if (typeof raw.$set.sessionId === "string") sessionId = raw.$set.sessionId;
+        if (Array.isArray(raw.$set.messages)) replaceMessages(raw.$set.messages);
+        continue;
+      }
+      if (typeof raw.$rewindTo === "string") {
+        const index = order.indexOf(raw.$rewindTo);
+        const removed = index >= 0 ? order.splice(index) : order.splice(0);
+        for (const id of removed) messages.delete(id);
+        continue;
+      }
+      if (!raw.id) continue;
+      if (!messages.has(raw.id)) order.push(raw.id);
+      messages.set(raw.id, raw);
+    }
+
+    for (const id of order) {
+      const rec = geminiRec(messages.get(id)!, sessionId);
+      if (rec) records.push(rec);
+    }
+  }
+
+  return records;
+}
+
 /* ------------------------------ registry ------------------------------ */
 export interface Source {
   tool: Rec["tool"];
@@ -394,6 +530,7 @@ export const SOURCES: Source[] = [
   { tool: "claude", label: "Claude Code", load: loadClaude },
   { tool: "codex", label: "Codex", load: loadCodex },
   { tool: "opencode", label: "OpenCode", load: loadOpenCode },
+  { tool: "gemini", label: "Gemini CLI", load: loadGemini },
 ];
 
 // Read every supported CLI. Sources with no data simply contribute nothing.

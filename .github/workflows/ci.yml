@@ -126,6 +126,45 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+  attest-standalone:
+    name: Attest standalone archives
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: standalone-prototype
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: standalone-prototype-*-${{ github.sha }}
+          path: attestation-subjects
+          merge-multiple: true
+      - name: Require exactly three platform archives
+        shell: bash
+        run: |
+          shopt -s nullglob
+          archives=(attestation-subjects/*.tar.gz attestation-subjects/*.zip)
+          test "${#archives[@]}" -eq 3
+          printf '%s\n' "${archives[@]}"
+      - name: Create keyless SLSA build provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: |
+            attestation-subjects/*.tar.gz
+            attestation-subjects/*.zip
+      - name: Verify repository provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          for archive in attestation-subjects/*.tar.gz attestation-subjects/*.zip; do
+            gh attestation verify "$archive" --repo "$GITHUB_REPOSITORY"
+          done
+
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'

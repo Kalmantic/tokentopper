@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.7.0...tokentopper-v0.7.1) (2026-07-20)
+
+
+### Bug Fixes
+
+* **cli:** align nested report rows and pad activity bars ([#63](https://github.com/Kalmantic/tokentopper/issues/63)) ([073d994](https://github.com/Kalmantic/tokentopper/commit/073d9948ad3a4569f5a09b498693bc8226cfb9b9))
+* count client-side web tools and dedup Claude records by max ([#61](https://github.com/Kalmantic/tokentopper/issues/61)) ([57066bd](https://github.com/Kalmantic/tokentopper/commit/57066bd4d73207727f1846ecd292664bdb5ef1ab))
+
 ## [0.7.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.6.1...tokentopper-v0.7.0) (2026-07-20)
 
 

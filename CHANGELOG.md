@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.6.1...tokentopper-v0.7.0) (2026-07-20)
+
+
+### Features
+
+* add daily, weekly, monthly, session, and blocks usage reports ([#56](https://github.com/Kalmantic/tokentopper/issues/56)) ([539e29e](https://github.com/Kalmantic/tokentopper/commit/539e29e8ec33e43d25bb54dc9e0ad9f619a8ab28))
+* agent-then-model breakdown, benchmark insight, and geo rank prompt ([#59](https://github.com/Kalmantic/tokentopper/issues/59)) ([1462858](https://github.com/Kalmantic/tokentopper/commit/1462858426ac19605d797c9d1d3452f3cad8c8a8))
+
 ## [0.6.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.6.0...tokentopper-v0.6.1) (2026-07-19)
 
 

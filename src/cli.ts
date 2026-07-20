@@ -5,6 +5,18 @@ import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { collectAll } from "./usage";
 import { aggregate, TIERS, toPublicAggregate, type Aggregate } from "./report";
+import {
+  blocksReport,
+  dailyReport,
+  monthlyReport,
+  sessionReport,
+  totalsOf,
+  weeklyReport,
+  type BlockRow,
+  type ReportOptions,
+  type ReportRow,
+  type SessionRow,
+} from "./breakdown";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
 import packageJson from "../package.json" with { type: "json" };
@@ -95,6 +107,129 @@ function summary(agg: Aggregate): void {
   }
   console.log(`  ${dim("Publish your rank:")} tokentopper export ${dim("→ signed.json, then upload at")} ${SITE}`);
   console.log("");
+}
+
+// ---------- ccusage-style reports ----------
+const fmtNum = (n: number) => n.toLocaleString("en-US");
+const fmtCost = (n: number) => `$${n.toFixed(2)}`;
+
+const REPORTS = ["daily", "weekly", "monthly", "session", "sessions", "blocks"] as const;
+type ReportCommand = (typeof REPORTS)[number];
+
+function reportOptions(): ReportOptions {
+  return { since: flag("since"), until: flag("until"), tool: flag("tool") };
+}
+
+function fmtLeft(ms: number): string {
+  const min = Math.max(0, Math.round(ms / 60_000));
+  return min >= 60 ? `${Math.floor(min / 60)}h${String(min % 60).padStart(2, "0")}m` : `${min}m`;
+}
+
+function printReport(
+  title: string,
+  labelHeader: string,
+  rows: { label: string; row: ReportRow; note?: string }[],
+  perUnit?: string,
+): void {
+  if (rows.length === 0) {
+    console.log(dim(`No usage in the selected window.`));
+    return;
+  }
+  const width = Math.max(labelHeader.length, "Total".length, ...rows.map((r) => r.label.length));
+  const cell = (s: string, w = 12) => s.padStart(w);
+  const line = (label: string, u: ReturnType<typeof totalsOf>) =>
+    `  ${label.padEnd(width)}${cell(fmtNum(u.input))}${cell(fmtNum(u.output))}${cell(fmtNum(u.cacheWrite), 13)}${cell(fmtNum(u.cacheRead), 13)}${cell(fmtNum(u.tokens), 15)}${cell(fmtCost(u.costUSD), 12)}`;
+  const maxTokens = Math.max(1, ...rows.map((r) => r.row.tokens));
+  const bar = (tokens: number) => "▮".repeat(Math.max(1, Math.round((tokens / maxTokens) * 14)));
+
+  console.log("");
+  console.log(`  ${bold(title)}`);
+  console.log("");
+  console.log(dim(`  ${labelHeader.padEnd(width)}${cell("Input")}${cell("Output")}${cell("Cache Write", 13)}${cell("Cache Read", 13)}${cell("Total", 15)}${cell("Cost", 12)}`));
+  for (const { label, row, note } of rows) {
+    console.log(`${line(label, row)}  ${green(bar(row.tokens))}${note ? `  ${dim(note)}` : ""}`);
+    if (has("breakdown")) {
+      for (const [model, usage] of Object.entries(row.byModel)) console.log(dim(line(`  ${model}`, usage)));
+    }
+    if (has("by-tool")) {
+      for (const [tool, usage] of Object.entries(row.byTool)) console.log(dim(line(`  ${tool}`, usage)));
+    }
+  }
+  console.log(dim(`  ${"".padEnd(width + 77, "─")}`));
+  const totals = totalsOf(rows.map((r) => r.row));
+  console.log(bold(line("Total", totals)));
+  if (perUnit && rows.length > 1) {
+    console.log(dim(`  Avg/${perUnit}: ${fmtNum(Math.round(totals.tokens / rows.length))} tokens · $${(totals.costUSD / rows.length).toFixed(2)} across ${rows.length} ${perUnit}s`));
+  }
+  console.log("");
+}
+
+function reportRows(command: ReportCommand, recs: Awaited<ReturnType<typeof collectAll>>): {
+  title: string;
+  labelHeader: string;
+  perUnit?: string;
+  rows: { label: string; row: ReportRow; note?: string }[];
+  raw: ReportRow[] | SessionRow[] | BlockRow[];
+} {
+  const opts = reportOptions();
+  if (command === "daily") {
+    const raw = dailyReport(recs, opts);
+    return { title: "Daily usage", labelHeader: "Date", perUnit: "day", raw, rows: raw.map((row) => ({ label: row.key, row, note: row.models.join(", ") })) };
+  }
+  if (command === "weekly") {
+    const raw = weeklyReport(recs, opts);
+    return { title: "Weekly usage (weeks start Sunday)", labelHeader: "Week of", perUnit: "week", raw, rows: raw.map((row) => ({ label: row.key, row, note: row.models.join(", ") })) };
+  }
+  if (command === "monthly") {
+    const raw = monthlyReport(recs, opts);
+    return { title: "Monthly usage", labelHeader: "Month", perUnit: "month", raw, rows: raw.map((row) => ({ label: row.key, row, note: row.models.join(", ") })) };
+  }
+  if (command === "blocks") {
+    const raw = blocksReport(recs, opts);
+    return {
+      title: "Billing blocks (5-hour windows, UTC)",
+      labelHeader: "Block start",
+      raw,
+      rows: raw.map((row) => ({
+        label: row.start.slice(0, 16).replace("T", " "),
+        row,
+        note: row.isActive
+          ? `${green("ACTIVE")} · ${fmtLeft(Date.parse(row.end) - Date.now())} left · ${fmtNum(row.burnRateTokensPerMin ?? 0)} tok/min · on pace for ${fmtTokens(row.projectedTokens ?? 0)} (${fmtCost(row.projectedCostUSD ?? 0)})`
+          : row.models.join(", "),
+      })),
+    };
+  }
+  const raw = sessionReport(recs, opts);
+  return {
+    title: "Sessions",
+    labelHeader: "Session",
+    raw,
+    rows: raw.map((row) => ({
+      label: `${row.tool} ${row.sessionId.slice(0, 8)}`,
+      row,
+      note: `last ${row.lastActivity} · ${row.models.join(", ")}`,
+    })),
+  };
+}
+
+function doReport(command: ReportCommand, recs: Awaited<ReturnType<typeof collectAll>>): void {
+  let report;
+  try {
+    report = reportRows(command, recs);
+  } catch (e) {
+    console.error((e as Error).message);
+    process.exit(1);
+  }
+  if (has("json")) {
+    const name = command === "sessions" ? "session" : command;
+    console.log(JSON.stringify(
+      { schema: "tokentopper-report/1", report: name, rows: report.raw, totals: totalsOf(report.raw) },
+      null,
+      has("pretty") ? 2 : 0,
+    ));
+    return;
+  }
+  printReport(report.title, report.labelHeader, report.rows, report.perUnit);
 }
 
 function doExport(agg: Aggregate): void {
@@ -209,6 +344,11 @@ ${bold("tokentopper")} ${dim("v" + VERSION)} — your Professional AI Usage Inde
 
 ${bold("Usage")}
   tokentopper                 Show your run-rate, tier, and Index (default)
+  tokentopper daily           Per-day tokens and cost (ccusage-style report)
+  tokentopper weekly          Per-week tokens and cost (weeks start Sunday)
+  tokentopper monthly         Per-month tokens and cost
+  tokentopper session         Per-session tokens and cost
+  tokentopper blocks          5-hour billing blocks, with the active block marked
   tokentopper json            Print machine-safe aggregate JSON
   tokentopper export          Write a signed.json you can upload
   tokentopper sync            Sign and push your usage to TokenTopper
@@ -217,7 +357,12 @@ ${bold("Usage")}
 
 ${bold("Options")}
   --out <file>     export: output path (default signed.json)
-  --json           Print machine-safe aggregate JSON
+  --json           Print machine-safe aggregate JSON (reports: rows + totals)
+  --since <date>   reports: include days on or after this date (YYYY-MM-DD)
+  --until <date>   reports: include days on or before this date (YYYY-MM-DD)
+  --tool <name>    reports: only one agent (claude, codex, opencode, gemini)
+  --breakdown      reports: add per-model rows under each line
+  --by-tool        reports: add per-agent rows under each line
   --pretty         json/export: pretty-print the JSON
   --endpoint <url> sync/login: override the upload endpoint
   --token <token>  sync/login: your CLI token
@@ -243,6 +388,12 @@ async function main(): Promise<void> {
 
   if (command === "login") return doLogin();
   if (command === "skill") return doSkillInstall();
+
+  if ((REPORTS as readonly string[]).includes(command)) {
+    const recs = await collectAll();
+    if (recs.length === 0) noData();
+    return doReport(command as ReportCommand, recs);
+  }
 
   const agg = await build();
   if (!agg) noData();

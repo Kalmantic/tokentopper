@@ -16,4 +16,17 @@ export {
   toPublicAggregate,
 } from "./report.ts";
 export type { Aggregate, PublicAggregate } from "./report.ts";
+export {
+  BLOCK_HOURS,
+  blocksReport,
+  dailyReport,
+  filterByDay,
+  monthlyReport,
+  normalizeDay,
+  sessionReport,
+  totalsOf,
+  weeklyReport,
+  weekStart,
+} from "./breakdown.ts";
+export type { BlockRow, ModelUsage, ReportOptions, ReportRow, SessionRow } from "./breakdown.ts";
 export type { Rec } from "./usage.ts";

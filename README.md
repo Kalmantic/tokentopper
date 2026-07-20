@@ -6,7 +6,8 @@
 [![license](https://img.shields.io/npm/l/tokentopper)](LICENSE)
 
 **Your Professional AI Usage Index for Claude Code, Codex, OpenCode, and Gemini CLI.** See your annual
-token run-rate, cost estimate, tier, and verified rank with one command.
+token run-rate, cost estimate, tier, and verified rank with one command — and break your
+AI token usage down by day, week, month, session, or 5-hour billing block.
 
 ```sh
 npx tokentopper@latest
@@ -75,14 +76,30 @@ registry publication requires the JSR scope/package to be linked to this reposit
 
 ## What it does
 
-TokenTopper is a local **Claude Code usage tracker**, **Codex token usage tracker**, **OpenCode usage tracker**, and **Gemini CLI usage tracker**.
+TokenTopper is a local **AI token usage tracker**: it tracks **Claude token usage**
+(Claude Code), **Codex token usage**, **OpenCode usage**, and **Gemini CLI usage**.
 It combines coding-agent usage into one comparable score:
 
 - annualized token run-rate and estimated model cost;
 - Professional AI Usage Index from 0 to 100;
 - eight usage tiers from Curious to Legend;
+- daily, weekly, monthly, session, and 5-hour billing-block reports;
 - per-model and per-agent breakdowns;
 - optional Ed25519-signed exports for a verified, shareable leaderboard rank.
+
+```text
+tokentopper daily
+
+  Date             Input   Output   Cache Write   Cache Read     Total    Cost
+  2026-07-01       3,500    2,800           300       13,000    19,600   $0.16  ▮▮▮▮▮▮▮▮▮▮
+  2026-07-08       3,000    1,200            50          700     4,950   $0.03  ▮▮▮
+  ─────────────────────────────────────────────────────────────────────────────
+  Total            6,500    4,000           350       13,700    24,550   $0.19
+```
+
+The active billing block in `tokentopper blocks` shows a live burn rate and the
+projected end-of-window usage, so you can see where the current 5-hour window is
+heading before it closes.
 
 TokenTopper measures historical usage recorded by supported AI coding agents. It is
 not a prompt tokenizer, context-window calculator, or middleware library.

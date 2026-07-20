@@ -139,11 +139,24 @@ hostname or machine identifier. Its schema is `tokentopper-summary/1`.
 | Command | Does |
 |---|---|
 | `tokentopper` | Print run-rate, tier, Index, top models (default) |
+| `tokentopper daily` | Per-day tokens (input/output/cache) and cost, with activity bars |
+| `tokentopper weekly` | Per-week report (weeks start Sunday) |
+| `tokentopper monthly` | Per-month report |
+| `tokentopper session` | Per-session report across every supported agent |
+| `tokentopper blocks` | 5-hour billing blocks; the active block shows burn rate and an end-of-window projection |
 | `tokentopper json [--pretty]` | Print machine-safe aggregate JSON for scripts |
 | `tokentopper export [--out f] [--pretty]` | Write `signed.json` |
 | `tokentopper sync [--watch] [--interval min]` | Sign and POST to TokenTopper |
 | `tokentopper login --token <t>` | Link this machine |
 | `tokentopper skill install` | Install the TokenTopper Agent Skill for Claude, Codex, and Gemini CLI |
+
+Every report accepts `--since`/`--until` (YYYY-MM-DD or YYYYMMDD), `--tool
+<claude|codex|opencode|gemini>` to isolate one agent, `--breakdown` for per-model
+rows, `--by-tool` for per-agent rows, and `--json [--pretty]` for scriptable
+output (`tokentopper-report/1` schema with rows and totals). Unlike
+single-agent trackers, one report covers Claude Code, Codex, OpenCode, and
+Gemini CLI together, and the active billing block includes a live burn rate and
+projected end-of-window usage.
 
 ## Claude, Codex, and Gemini skill
 

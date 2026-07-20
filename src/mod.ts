@@ -17,6 +17,10 @@ export {
 } from "./report.ts";
 export type { Aggregate, PublicAggregate } from "./report.ts";
 export {
+  BENCHMARK_TOKENS_PER_MONTH,
+  BENCHMARK_TOKENS_PER_WORKDAY,
+  BENCHMARK_WORKDAYS_PER_MONTH,
+  benchmarkInsight,
   BLOCK_HOURS,
   blocksReport,
   dailyReport,
@@ -28,5 +32,5 @@ export {
   weeklyReport,
   weekStart,
 } from "./breakdown.ts";
-export type { BlockRow, ModelUsage, ReportOptions, ReportRow, SessionRow } from "./breakdown.ts";
+export type { BlockRow, Insight, ModelUsage, ReportOptions, ReportRow, SessionRow, ToolUsage } from "./breakdown.ts";
 export type { Rec } from "./usage.ts";

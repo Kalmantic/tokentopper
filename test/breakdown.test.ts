@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  benchmarkInsight,
   blocksReport,
   dailyReport,
   filterByDay,
@@ -127,7 +128,7 @@ test("filterByDay --tool restricts to one agent and rejects unknown tools", () =
   assert.throws(() => filterByDay(recs, { tool: "copilot" }), /Unknown --tool/);
 });
 
-test("rows carry a per-tool breakdown", () => {
+test("rows carry an agent-then-model breakdown", () => {
   const rows = dailyReport([
     rec({}),
     rec({ tool: "gemini", provider: "google", model: "gemini-2.5-pro", input: 300 }),
@@ -135,6 +136,20 @@ test("rows carry a per-tool breakdown", () => {
   const row = rows[0]!;
   assert.equal(row.byTool["claude"]?.tokens, 200);
   assert.equal(row.byTool["gemini"]?.tokens, 400);
+  assert.equal(row.byTool["claude"]?.byModel["claude-sonnet-4"]?.tokens, 200);
+  assert.equal(row.byTool["gemini"]?.byModel["gemini-2.5-pro"]?.tokens, 400);
+});
+
+test("benchmarkInsight compares the latest month to the 5B/month pace", () => {
+  assert.equal(benchmarkInsight([]), null);
+  const behind = benchmarkInsight([rec({ day: "2026-06-10" }), rec({ day: "2026-07-10" })]);
+  assert.equal(behind?.month, "2026-07");
+  assert.equal(behind?.monthTokens, 200);
+  assert.equal(behind?.perWorkdayTokens, 10);
+  assert.equal(behind?.ahead, false);
+  const ahead = benchmarkInsight([rec({ day: "2026-07-10", input: 6_000_000_000 })]);
+  assert.equal(ahead?.ahead, true);
+  assert.ok((ahead?.benchmarkShare ?? 0) > 1);
 });
 
 test("active block reports burn rate and end-of-window projection", () => {

@@ -84,8 +84,11 @@ It combines coding-agent usage into one comparable score:
 - Professional AI Usage Index from 0 to 100;
 - eight usage tiers from Curious to Legend;
 - daily, weekly, monthly, session, and 5-hour billing-block reports;
-- per-model and per-agent breakdowns;
-- optional Ed25519-signed exports for a verified, shareable leaderboard rank.
+- per-model and per-agent breakdowns, nested agent → model with `--by-tool`;
+- a benchmark insight that tells you whether you are ahead of, or falling
+  behind, an AI-first engineer's pace of ~5B tokens/month (~250M per working day);
+- optional Ed25519-signed exports for a verified, shareable leaderboard rank —
+  see where you stand globally, by country, and by city.
 
 ```text
 tokentopper daily
@@ -100,6 +103,18 @@ tokentopper daily
 The active billing block in `tokentopper blocks` shows a live burn rate and the
 projected end-of-window usage, so you can see where the current 5-hour window is
 heading before it closes.
+
+Every report ends with an insight that compares your latest month to the
+benchmark pace, so you always know whether you are pushing your AI tools hard
+enough — and how to publish your rank if you are:
+
+```text
+  Insight   An AI-first engineer runs ~5.00B tokens/month (~250.0M per working day).
+            Your 2026-07 pace: 1.2B tokens (24% of benchmark, ~60.0M/workday).
+            You're falling behind — push your AI tools to the limit and let them work for you.
+  Rank      See where you stand globally, by country, and by city:
+            tokentopper export → upload at https://openfactoryai.com/tools/tokentopper/
+```
 
 TokenTopper measures historical usage recorded by supported AI coding agents. It is
 not a prompt tokenizer, context-window calculator, or middleware library.
@@ -144,6 +159,7 @@ Your private key stays in `~/.tokentopper/key.json`.
 1. Run `npx tokentopper@latest` to see your private local score.
 2. Run `npx tokentopper@latest export --pretty` to create `signed.json`.
 3. Upload it at [openfactoryai.com/tools/tokentopper](https://openfactoryai.com/tools/tokentopper/) or link once and use `tokentopper sync`.
+4. See where you rank globally, by country, and by city — and defend it.
 
 The signature makes the aggregate tamper-evident after export. Publishing is opt-in;
 local scoring remains private.
@@ -169,11 +185,11 @@ hostname or machine identifier. Its schema is `tokentopper-summary/1`.
 
 Every report accepts `--since`/`--until` (YYYY-MM-DD or YYYYMMDD), `--tool
 <claude|codex|opencode|gemini>` to isolate one agent, `--breakdown` for per-model
-rows, `--by-tool` for per-agent rows, and `--json [--pretty]` for scriptable
-output (`tokentopper-report/1` schema with rows and totals). Unlike
-single-agent trackers, one report covers Claude Code, Codex, OpenCode, and
-Gemini CLI together, and the active billing block includes a live burn rate and
-projected end-of-window usage.
+rows, `--by-tool` for agent rows with each agent's models nested beneath them,
+and `--json [--pretty]` for scriptable output (`tokentopper-report/1` schema with
+rows and totals). Unlike single-agent trackers, one report covers Claude Code,
+Codex, OpenCode, and Gemini CLI together, and the active billing block includes a
+live burn rate and projected end-of-window usage.
 
 ## Claude, Codex, and Gemini skill
 

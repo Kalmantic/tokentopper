@@ -159,19 +159,40 @@ function printReport(
     console.log(dim(`No usage in the selected window.`));
     return;
   }
-  const width = Math.max(labelHeader.length, "Total".length, ...rows.map((r) => r.label.length));
+  // The label column must fit every nested sub-row label too, so per-model and
+  // per-agent lines share the same numeric columns as their parent row.
+  const subLabels: string[] = [];
+  for (const { row } of rows) {
+    if (has("by-tool")) {
+      for (const [tool, usage] of Object.entries(row.byTool)) {
+        subLabels.push(`  ${tool}`);
+        for (const model of Object.keys(usage.byModel)) subLabels.push(`    ${model}`);
+      }
+    } else if (has("breakdown")) {
+      for (const model of Object.keys(row.byModel)) subLabels.push(`  ${model}`);
+    }
+  }
+  const width = Math.max(
+    labelHeader.length,
+    "Total".length,
+    ...rows.map((r) => r.label.length),
+    ...subLabels.map((s) => s.length),
+  );
+  const NUM_COLS = 12 + 12 + 13 + 13 + 15 + 12;
+  const BAR_WIDTH = 14;
   const cell = (s: string, w = 12) => s.padStart(w);
   const line = (label: string, u: ReturnType<typeof totalsOf>) =>
     `  ${label.padEnd(width)}${cell(fmtNum(u.input))}${cell(fmtNum(u.output))}${cell(fmtNum(u.cacheWrite), 13)}${cell(fmtNum(u.cacheRead), 13)}${cell(fmtNum(u.tokens), 15)}${cell(fmtCost(u.costUSD), 12)}`;
   const maxTokens = Math.max(1, ...rows.map((r) => r.row.tokens));
-  const bar = (tokens: number) => "▮".repeat(Math.max(1, Math.round((tokens / maxTokens) * 14)));
+  const bar = (tokens: number) =>
+    "▮".repeat(Math.max(1, Math.round((tokens / maxTokens) * BAR_WIDTH))).padEnd(BAR_WIDTH);
 
   console.log("");
   console.log(`  ${bold(title)}`);
   console.log("");
   console.log(dim(`  ${labelHeader.padEnd(width)}${cell("Input")}${cell("Output")}${cell("Cache Write", 13)}${cell("Cache Read", 13)}${cell("Total", 15)}${cell("Cost", 12)}`));
   for (const { label, row, note } of rows) {
-    console.log(`${line(label, row)}  ${green(bar(row.tokens))}${note ? `  ${dim(note)}` : ""}`);
+    console.log(`${line(label, row)}  ${green(bar(row.tokens))}${note ? ` ${dim(note)}` : ""}`);
     if (has("by-tool")) {
       // Agent first, then that agent's models nested beneath it.
       for (const [tool, usage] of Object.entries(row.byTool)) {
@@ -182,7 +203,7 @@ function printReport(
       for (const [model, usage] of Object.entries(row.byModel)) console.log(dim(line(`  ${model}`, usage)));
     }
   }
-  console.log(dim(`  ${"".padEnd(width + 77, "─")}`));
+  console.log(dim(`  ${"".padEnd(width + NUM_COLS, "─")}`));
   const totals = totalsOf(rows.map((r) => r.row));
   console.log(bold(line("Total", totals)));
   if (perUnit && rows.length > 1) {

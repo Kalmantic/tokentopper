@@ -1,6 +1,9 @@
 # TokenTopper distribution TODO
 
-Goal: make TokenTopper easy to install, safe to publish, and verifiably usable on every supported platform.
+Goal: make TokenTopper easy to install, safe to publish, verifiably usable on
+every supported platform, and **designed for enterprise security**: privacy by
+default, a fully verifiable supply chain, and continuous security checks that
+prove it.
 
 ## Current baseline
 
@@ -90,6 +93,34 @@ Exit condition: each supported install command is automated, tested in a clean e
 - [x] Add a public compatibility document explaining which local files are read and which data can leave the machine.
 - [x] Add privacy-safe release health checks for registry provenance and clean installation across supported runtimes.
 - [ ] Add operational monitoring for sync API errors and opt-in user feedback.
+
+## P5: enterprise security by design
+
+Standing goal: an enterprise security review should pass on evidence alone. Every
+claim below must be enforced by CI or documented, not just intended.
+
+- [x] Privacy boundary: no prompt/response content, file paths, or branch names
+  are read into records; nothing leaves the machine except explicit `export`/`sync`.
+- [x] No per-project grouping: project paths stay out of reports by design
+  (deliberate non-goal, unlike other usage trackers).
+- [x] MCP mode is read-only and local-only: stdio JSON-RPC, no filesystem writes,
+  no network, exposes only privacy-safe aggregates.
+- [x] Supply chain: OIDC trusted publishing (no reusable npm tokens), provenance
+  on every release, pinned Actions, CodeQL, dependency review, secret scanning,
+  SBOM + SHA-256 sidecars on release assets, protected release environments.
+- [ ] Add an OpenSSF Scorecard workflow and publish the badge in the README.
+- [ ] Add osv-scanner (or `npm audit` with a signal-only gate) to CI for
+  known-vulnerability checks on the dependency tree.
+- [ ] Add a `SECURITY.md` with a vulnerability disclosure policy and supported
+  release window.
+- [ ] Publish a short threat model in `docs/`: assets (local usage records,
+  Ed25519 key, CLI token), trust boundaries (CLI ↔ site, MCP client ↔ server),
+  and the exfiltration guarantees CI enforces.
+- [ ] Sign standalone executables (macOS notarization, Windows Authenticode)
+  before promoting them to release artifacts (tracked in P3).
+- [ ] Add SLSA provenance attestation for standalone archives.
+- [ ] Document data handling for enterprise buyers in `docs/COMPATIBILITY.md`:
+  what is read, what is derived, what leaves the machine, retention advice.
 
 ## Recommended execution order
 

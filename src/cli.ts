@@ -21,6 +21,7 @@ import {
   type SessionRow,
 } from "./breakdown";
 import type { Rec } from "./usage";
+import { runMcpServer } from "./mcp";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
 import packageJson from "../package.json" with { type: "json" };
@@ -178,11 +179,23 @@ function printReport(
     ...rows.map((r) => r.label.length),
     ...subLabels.map((s) => s.length),
   );
-  const NUM_COLS = 12 + 12 + 13 + 13 + 15 + 12;
+  type Usage = ReturnType<typeof totalsOf>;
+  const columns: { header: string; w: number; value: (u: Usage) => string }[] = [
+    { header: "Input", w: 12, value: (u) => fmtNum(u.input) },
+    { header: "Output", w: 12, value: (u) => fmtNum(u.output) },
+    ...(has("compact")
+      ? []
+      : [
+          { header: "Cache Write", w: 13, value: (u: Usage) => fmtNum(u.cacheWrite) },
+          { header: "Cache Read", w: 13, value: (u: Usage) => fmtNum(u.cacheRead) },
+        ]),
+    { header: "Total", w: 15, value: (u) => fmtNum(u.tokens) },
+    ...(has("no-cost") ? [] : [{ header: "Cost", w: 12, value: (u: Usage) => fmtCost(u.costUSD) }]),
+  ];
+  const NUM_COLS = columns.reduce((sum, c) => sum + c.w, 0);
   const BAR_WIDTH = 14;
-  const cell = (s: string, w = 12) => s.padStart(w);
-  const line = (label: string, u: ReturnType<typeof totalsOf>) =>
-    `  ${label.padEnd(width)}${cell(fmtNum(u.input))}${cell(fmtNum(u.output))}${cell(fmtNum(u.cacheWrite), 13)}${cell(fmtNum(u.cacheRead), 13)}${cell(fmtNum(u.tokens), 15)}${cell(fmtCost(u.costUSD), 12)}`;
+  const line = (label: string, u: Usage) =>
+    `  ${label.padEnd(width)}${columns.map((c) => c.value(u).padStart(c.w)).join("")}`;
   const maxTokens = Math.max(1, ...rows.map((r) => r.row.tokens));
   const bar = (tokens: number) =>
     "▮".repeat(Math.max(1, Math.round((tokens / maxTokens) * BAR_WIDTH))).padEnd(BAR_WIDTH);
@@ -190,7 +203,7 @@ function printReport(
   console.log("");
   console.log(`  ${bold(title)}`);
   console.log("");
-  console.log(dim(`  ${labelHeader.padEnd(width)}${cell("Input")}${cell("Output")}${cell("Cache Write", 13)}${cell("Cache Read", 13)}${cell("Total", 15)}${cell("Cost", 12)}`));
+  console.log(dim(`  ${labelHeader.padEnd(width)}${columns.map((c) => c.header.padStart(c.w)).join("")}`));
   for (const { label, row, note } of rows) {
     console.log(`${line(label, row)}  ${green(bar(row.tokens))}${note ? ` ${dim(note)}` : ""}`);
     if (has("by-tool")) {
@@ -207,7 +220,8 @@ function printReport(
   const totals = totalsOf(rows.map((r) => r.row));
   console.log(bold(line("Total", totals)));
   if (perUnit && rows.length > 1) {
-    console.log(dim(`  Avg/${perUnit}: ${fmtNum(Math.round(totals.tokens / rows.length))} tokens · $${(totals.costUSD / rows.length).toFixed(2)} across ${rows.length} ${perUnit}s`));
+    const avgCost = has("no-cost") ? "" : ` · $${(totals.costUSD / rows.length).toFixed(2)}`;
+    console.log(dim(`  Avg/${perUnit}: ${fmtNum(Math.round(totals.tokens / rows.length))} tokens${avgCost} across ${rows.length} ${perUnit}s`));
   }
   console.log("");
 }
@@ -403,6 +417,7 @@ ${bold("Usage")}
   tokentopper sync            Sign and push your usage to TokenTopper
   tokentopper login           Link this machine with your CLI token
   tokentopper skill install   Install the Agent Skill for Claude, Codex, and Gemini
+  tokentopper mcp             Run a read-only, local-only MCP stdio server
 
 ${bold("Options")}
   --out <file>     export: output path (default signed.json)
@@ -412,6 +427,8 @@ ${bold("Options")}
   --tool <name>    reports: only one agent (claude, codex, opencode, gemini)
   --breakdown      reports: add per-model rows under each line
   --by-tool        reports: add per-agent rows with each agent's models nested
+  --compact        reports: drop the cache columns for narrow terminals
+  --no-cost        reports: hide the cost column
   --pretty         json/export: pretty-print the JSON
   --endpoint <url> sync/login: override the upload endpoint
   --token <token>  sync/login: your CLI token
@@ -437,6 +454,7 @@ async function main(): Promise<void> {
 
   if (command === "login") return doLogin();
   if (command === "skill") return doSkillInstall();
+  if (command === "mcp") return runMcpServer(VERSION);
 
   if ((REPORTS as readonly string[]).includes(command)) {
     const recs = await collectAll();

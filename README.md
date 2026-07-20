@@ -182,14 +182,33 @@ hostname or machine identifier. Its schema is `tokentopper-summary/1`.
 | `tokentopper sync [--watch] [--interval min]` | Sign and POST to TokenTopper |
 | `tokentopper login --token <t>` | Link this machine |
 | `tokentopper skill install` | Install the TokenTopper Agent Skill for Claude, Codex, and Gemini CLI |
+| `tokentopper mcp` | Run a read-only MCP server so agents can query your usage locally |
 
 Every report accepts `--since`/`--until` (YYYY-MM-DD or YYYYMMDD), `--tool
 <claude|codex|opencode|gemini>` to isolate one agent, `--breakdown` for per-model
 rows, `--by-tool` for agent rows with each agent's models nested beneath them,
-and `--json [--pretty]` for scriptable output (`tokentopper-report/1` schema with
-rows and totals). Unlike single-agent trackers, one report covers Claude Code,
-Codex, OpenCode, and Gemini CLI together, and the active billing block includes a
-live burn rate and projected end-of-window usage.
+`--compact` to drop the cache columns on narrow terminals, `--no-cost` to hide
+the cost column, and `--json [--pretty]` for scriptable output
+(`tokentopper-report/1` schema with rows and totals). Unlike single-agent
+trackers, one report covers Claude Code, Codex, OpenCode, and Gemini CLI
+together, and the active billing block includes a live burn rate and projected
+end-of-window usage.
+
+## MCP server
+
+`tokentopper mcp` runs a Model Context Protocol server over stdio so your coding
+agent can query your own usage. It is **read-only and local-only** by design: no
+filesystem writes, no network, and it exposes only the same privacy-safe
+aggregates the CLI prints — never prompts, file paths, or machine identity.
+Register it with a stdio MCP client, e.g. for Claude Code:
+
+```sh
+claude mcp add tokentopper -- npx tokentopper@latest mcp
+```
+
+Tools exposed: `usage_summary` (aggregate totals, run-rate, tier, index) and
+`usage_report` (daily/weekly/monthly/session/blocks rows with totals and the
+benchmark insight).
 
 ## Claude, Codex, and Gemini skill
 

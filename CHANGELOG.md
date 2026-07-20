@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.7.1...tokentopper-v0.8.0) (2026-07-20)
+
+
+### Features
+
+* read-only MCP server mode, compact and no-cost report flags ([#64](https://github.com/Kalmantic/tokentopper/issues/64)) ([3a41809](https://github.com/Kalmantic/tokentopper/commit/3a41809adec75eff9729187759c5289facdc1cf1))
+
 ## [0.7.1](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.7.0...tokentopper-v0.7.1) (2026-07-20)
 
 

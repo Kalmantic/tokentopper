@@ -182,7 +182,7 @@ export function sessionReport(recs: Rec[], opts: ReportOptions = {}): SessionRow
 // 5-hour billing windows, ccusage-style: a block opens at the first request's
 // timestamp floored to the UTC hour and spans 5 hours; a request past the end
 // opens the next block. Gaps produce no rows.
-export function blocksReport(recs: Rec[], opts: ReportOptions = {}, now = Date.now()): BlockRow[] {
+export function blocksReport(recs: Rec[], opts: ReportOptions = {}, now: number = Date.now()): BlockRow[] {
   const timed = filterByDay(recs, opts)
     .map((r) => ({ r, t: Date.parse(r.ts) }))
     .filter((x) => !Number.isNaN(x.t))

@@ -32,8 +32,19 @@ npm provenance and installation, the primary `npx` command, pinned `pnpm dlx`,
 - Fields used: timestamp, session ID, message ID, model, input/output/cache token
   counts, and web search/fetch counts.
 - Deduplication: message ID, falling back to UUID or the local file/timestamp pair.
+  Duplicate lines for one message (streaming partials, history copied forward on
+  session resume) keep the maximum value per counter.
+- Web tools: client-side `WebSearch`/`WebFetch` `tool_use` blocks are counted in
+  addition to the API's `server_tool_use` counters, which stay zero in local
+  Claude Code transcripts.
 
 `CLAUDE_CONFIG_DIR` may contain a comma-separated list of configuration roots.
+
+**Retention:** Claude Code deletes transcripts under its projects directory after
+`cleanupPeriodDays` (30 days by default), so history older than that is
+unrecoverable by any reader. To preserve long-run usage history, raise it in
+`~/.claude/settings.json`, for example `{ "cleanupPeriodDays": 3650 }`, and run
+`tokentopper sync` regularly so your aggregate survives local cleanup.
 
 ### Codex
 

@@ -6,6 +6,9 @@ import { homedir } from "node:os";
 import { collectAll } from "./usage";
 import { aggregate, TIERS, toPublicAggregate, type Aggregate } from "./report";
 import {
+  BENCHMARK_TOKENS_PER_MONTH,
+  BENCHMARK_TOKENS_PER_WORKDAY,
+  benchmarkInsight,
   blocksReport,
   dailyReport,
   monthlyReport,
@@ -17,6 +20,7 @@ import {
   type ReportRow,
   type SessionRow,
 } from "./breakdown";
+import type { Rec } from "./usage";
 import { signAggregate, type Signed } from "./sign";
 import { readConfig, resolveEndpoint, resolveToken, writeConfig } from "./config";
 import packageJson from "../package.json" with { type: "json" };
@@ -71,7 +75,7 @@ function noData(): never {
 }
 
 // ---------- commands ----------
-function summary(agg: Aggregate): void {
+function summary(agg: Aggregate, recs: Rec[]): void {
   const rr = agg.runRate.tokensPerYear;
   const models = Object.entries(agg.byModel).sort((a, b) => b[1].tokens - a[1].tokens);
 
@@ -104,9 +108,9 @@ function summary(agg: Aggregate): void {
   console.log("");
   if (next && Number.isFinite(next.max)) {
     console.log(`  ${dim("Next rung:")} ${next.name} at ${fmtTokens(TIERS[idx]!.max)}/yr. ${dim("Trailblazer starts at 5B/month (60B/yr).")}`);
+    console.log("");
   }
-  console.log(`  ${dim("Publish your rank:")} tokentopper export ${dim("→ signed.json, then upload at")} ${SITE}`);
-  console.log("");
+  printInsight(recs);
 }
 
 // ---------- ccusage-style reports ----------
@@ -118,6 +122,26 @@ type ReportCommand = (typeof REPORTS)[number];
 
 function reportOptions(): ReportOptions {
   return { since: flag("since"), until: flag("until"), tool: flag("tool") };
+}
+
+function printInsight(recs: Rec[]): void {
+  const insight = benchmarkInsight(recs);
+  if (!insight) return;
+  const share = insight.benchmarkShare;
+  const pace =
+    share >= 1
+      ? `${share.toFixed(1)}× the benchmark`
+      : `${share * 100 >= 1 ? (share * 100).toFixed(0) : share * 100 >= 0.01 ? (share * 100).toFixed(2) : "<0.01"}% of benchmark`;
+  console.log(`  ${bold("Insight")}   ${dim(`An AI-first engineer runs ~${fmtTokens(BENCHMARK_TOKENS_PER_MONTH)} tokens/month (~${fmtTokens(BENCHMARK_TOKENS_PER_WORKDAY)} per working day).`)}`);
+  console.log(`            Your ${insight.month} pace: ${bold(fmtTokens(insight.monthTokens))} tokens (${pace}, ~${fmtTokens(insight.perWorkdayTokens)}/workday).`);
+  console.log(
+    insight.ahead
+      ? `            ${green("You're ahead of the pack — claim your verified rank before someone takes it.")}`
+      : `            You're falling behind — push your AI tools to the limit and let them work for you.`,
+  );
+  console.log(`  ${bold("Rank")}      See where you stand ${bold("globally, by country, and by city")}:`);
+  console.log(`            ${green("tokentopper export")} ${dim("→ upload signed.json at")} ${SITE}`);
+  console.log("");
 }
 
 function fmtLeft(ms: number): string {
@@ -148,11 +172,14 @@ function printReport(
   console.log(dim(`  ${labelHeader.padEnd(width)}${cell("Input")}${cell("Output")}${cell("Cache Write", 13)}${cell("Cache Read", 13)}${cell("Total", 15)}${cell("Cost", 12)}`));
   for (const { label, row, note } of rows) {
     console.log(`${line(label, row)}  ${green(bar(row.tokens))}${note ? `  ${dim(note)}` : ""}`);
-    if (has("breakdown")) {
-      for (const [model, usage] of Object.entries(row.byModel)) console.log(dim(line(`  ${model}`, usage)));
-    }
     if (has("by-tool")) {
-      for (const [tool, usage] of Object.entries(row.byTool)) console.log(dim(line(`  ${tool}`, usage)));
+      // Agent first, then that agent's models nested beneath it.
+      for (const [tool, usage] of Object.entries(row.byTool)) {
+        console.log(dim(line(`  ${tool}`, usage)));
+        for (const [model, mu] of Object.entries(usage.byModel)) console.log(dim(line(`    ${model}`, mu)));
+      }
+    } else if (has("breakdown")) {
+      for (const [model, usage] of Object.entries(row.byModel)) console.log(dim(line(`  ${model}`, usage)));
     }
   }
   console.log(dim(`  ${"".padEnd(width + 77, "─")}`));
@@ -230,6 +257,7 @@ function doReport(command: ReportCommand, recs: Awaited<ReturnType<typeof collec
     return;
   }
   printReport(report.title, report.labelHeader, report.rows, report.perUnit);
+  if (report.rows.length > 0) printInsight(recs);
 }
 
 function doExport(agg: Aggregate): void {
@@ -362,7 +390,7 @@ ${bold("Options")}
   --until <date>   reports: include days on or before this date (YYYY-MM-DD)
   --tool <name>    reports: only one agent (claude, codex, opencode, gemini)
   --breakdown      reports: add per-model rows under each line
-  --by-tool        reports: add per-agent rows under each line
+  --by-tool        reports: add per-agent rows with each agent's models nested
   --pretty         json/export: pretty-print the JSON
   --endpoint <url> sync/login: override the upload endpoint
   --token <token>  sync/login: your CLI token
@@ -395,8 +423,9 @@ async function main(): Promise<void> {
     return doReport(command as ReportCommand, recs);
   }
 
-  const agg = await build();
-  if (!agg) noData();
+  const recs = await collectAll();
+  if (recs.length === 0) noData();
+  const agg = aggregate(recs, VERSION, Date.now());
   if (has("json")) return doJson(agg);
 
   switch (command) {
@@ -407,7 +436,7 @@ async function main(): Promise<void> {
     case "sync":
       return doSync(agg);
     case "summary":
-      return summary(agg);
+      return summary(agg, recs);
     default:
       console.error(`Unknown command "${command}".`);
       help();

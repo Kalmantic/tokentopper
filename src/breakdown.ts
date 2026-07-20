@@ -21,11 +21,15 @@ export interface ModelUsage {
   requests: number;
 }
 
+export interface ToolUsage extends ModelUsage {
+  byModel: Record<string, ModelUsage>;
+}
+
 export interface ReportRow extends ModelUsage {
   key: string;
   models: string[];
   byModel: Record<string, ModelUsage>;
-  byTool: Record<string, ModelUsage>;
+  byTool: Record<string, ToolUsage>;
 }
 
 export interface SessionRow extends ReportRow {
@@ -106,9 +110,18 @@ function add(u: ModelUsage, r: Rec, cost: number): void {
 function finishRow<T extends ReportRow>(row: T): T {
   row.costUSD = round2(row.costUSD);
   for (const m of Object.values(row.byModel)) m.costUSD = round2(m.costUSD);
-  for (const t of Object.values(row.byTool)) t.costUSD = round2(t.costUSD);
+  for (const t of Object.values(row.byTool)) {
+    t.costUSD = round2(t.costUSD);
+    for (const m of Object.values(t.byModel)) m.costUSD = round2(m.costUSD);
+  }
   row.models = Object.keys(row.byModel).sort();
   return row;
+}
+
+function addToTool(row: ReportRow, r: Rec, cost: number): void {
+  const t = (row.byTool[r.tool] ??= { ...emptyUsage(), byModel: {} });
+  add(t, r, cost);
+  add((t.byModel[r.model] ??= emptyUsage()), r, cost);
 }
 
 function bucket(recs: Rec[], keyOf: (r: Rec) => string | null): ReportRow[] {
@@ -124,7 +137,7 @@ function bucket(recs: Rec[], keyOf: (r: Rec) => string | null): ReportRow[] {
     const cost = recCost(r);
     add(row, r, cost);
     add((row.byModel[r.model] ??= emptyUsage()), r, cost);
-    add((row.byTool[r.tool] ??= emptyUsage()), r, cost);
+    addToTool(row, r, cost);
   }
   return [...rows.values()].map(finishRow).sort((a, b) => a.key.localeCompare(b.key));
 }
@@ -171,7 +184,7 @@ export function sessionReport(recs: Rec[], opts: ReportOptions = {}): SessionRow
     const cost = recCost(r);
     add(row, r, cost);
     add((row.byModel[r.model] ??= emptyUsage()), r, cost);
-    add((row.byTool[r.tool] ??= emptyUsage()), r, cost);
+    addToTool(row, r, cost);
     if (r.day > row.lastActivity) row.lastActivity = r.day;
   }
   return [...rows.values()]
@@ -215,7 +228,7 @@ export function blocksReport(recs: Rec[], opts: ReportOptions = {}, now: number 
     const cost = recCost(r);
     add(current, r, cost);
     add((current.byModel[r.model] ??= emptyUsage()), r, cost);
-    add((current.byTool[r.tool] ??= emptyUsage()), r, cost);
+    addToTool(current, r, cost);
     if (r.ts > current.lastActivity) current.lastActivity = r.ts;
   }
   for (const row of rows) {
@@ -231,6 +244,34 @@ export function blocksReport(recs: Rec[], opts: ReportOptions = {}, now: number 
     row.projectedCostUSD = round2(row.costUSD + (row.costUSD / elapsedMin) * remainingMin);
   }
   return rows.map(finishRow);
+}
+
+// Benchmark: an AI-first engineer runs ~5B tokens/month across coding agents,
+// or ~250M per working day over a 20-workday month. The insight compares the
+// user's most recent active month against that pace.
+export const BENCHMARK_TOKENS_PER_MONTH = 5_000_000_000;
+export const BENCHMARK_WORKDAYS_PER_MONTH = 20;
+export const BENCHMARK_TOKENS_PER_WORKDAY: number = BENCHMARK_TOKENS_PER_MONTH / BENCHMARK_WORKDAYS_PER_MONTH;
+
+export interface Insight {
+  month: string; // YYYY-MM of the most recent active month
+  monthTokens: number;
+  perWorkdayTokens: number; // monthTokens spread over 20 working days
+  benchmarkShare: number; // monthTokens / BENCHMARK_TOKENS_PER_MONTH
+  ahead: boolean; // at or above the benchmark pace
+}
+
+export function benchmarkInsight(recs: Rec[]): Insight | null {
+  const months = monthlyReport(recs);
+  const latest = months[months.length - 1];
+  if (!latest) return null;
+  return {
+    month: latest.key,
+    monthTokens: latest.tokens,
+    perWorkdayTokens: Math.round(latest.tokens / BENCHMARK_WORKDAYS_PER_MONTH),
+    benchmarkShare: latest.tokens / BENCHMARK_TOKENS_PER_MONTH,
+    ahead: latest.tokens >= BENCHMARK_TOKENS_PER_MONTH,
+  };
 }
 
 export function totalsOf(rows: ReportRow[]): ModelUsage {

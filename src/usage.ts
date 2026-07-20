@@ -53,6 +53,7 @@ interface ClaudeRaw {
   message?: {
     id?: string;
     model?: string;
+    content?: { type?: string; name?: string }[];
     usage?: {
       input_tokens?: number;
       output_tokens?: number;
@@ -89,7 +90,19 @@ export function loadClaude(roots = claudeRoots()): Rec[] {
       const ts = o.timestamp ?? "";
       const key = "claude:" + String(msg.id ?? o.uuid ?? `${file}:${ts}`);
       const server = u.server_tool_use ?? {};
-      seen.set(key, {
+      // Claude Code's WebSearch/WebFetch are client-side tools dispatched as
+      // tool_use content blocks; server_tool_use only counts the API's
+      // server-side web tools, which is always zero in local transcripts.
+      let webSearch = server.web_search_requests ?? 0;
+      let webFetch = server.web_fetch_requests ?? 0;
+      if (Array.isArray(msg.content)) {
+        for (const block of msg.content) {
+          if (block?.type !== "tool_use") continue;
+          if (block.name === "WebSearch") webSearch += 1;
+          else if (block.name === "WebFetch") webFetch += 1;
+        }
+      }
+      const next: Rec = {
         ts,
         day: ts.slice(0, 10),
         tool: "claude",
@@ -100,9 +113,26 @@ export function loadClaude(roots = claudeRoots()): Rec[] {
         output: u.output_tokens ?? 0,
         cacheWrite: u.cache_creation_input_tokens ?? 0,
         cacheRead: u.cache_read_input_tokens ?? 0,
-        webSearch: server.web_search_requests ?? 0,
-        webFetch: server.web_fetch_requests ?? 0,
-      });
+        webSearch,
+        webFetch,
+      };
+      // The same message id can appear on multiple lines (streaming partials,
+      // history copied forward on resume) with growing usage. Keep the largest
+      // value per counter instead of whichever line the walk hits last.
+      const prev = seen.get(key);
+      if (prev) {
+        next.input = Math.max(prev.input, next.input);
+        next.output = Math.max(prev.output, next.output);
+        next.cacheWrite = Math.max(prev.cacheWrite, next.cacheWrite);
+        next.cacheRead = Math.max(prev.cacheRead, next.cacheRead);
+        next.webSearch = Math.max(prev.webSearch, next.webSearch);
+        next.webFetch = Math.max(prev.webFetch, next.webFetch);
+        if (!next.ts) {
+          next.ts = prev.ts;
+          next.day = prev.day;
+        }
+      }
+      seen.set(key, next);
     }
   }
   return [...seen.values()];

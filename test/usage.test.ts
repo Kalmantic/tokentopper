@@ -32,9 +32,29 @@ test("Claude reader extracts usage and deduplicates message IDs", () => {
         },
       },
     };
+    // The same message id appears three times: an early streaming partial, the
+    // full line with client-side WebSearch/WebFetch tool_use blocks, then a
+    // stale copy walked last. The reader must keep the max per counter and
+    // count client-side web tools, not just server_tool_use.
+    const complete = {
+      ...record,
+      message: {
+        ...record.message,
+        content: [
+          { type: "text", text: "" },
+          { type: "tool_use", name: "WebSearch" },
+          { type: "tool_use", name: "WebFetch" },
+        ],
+        usage: { ...record.message.usage, output_tokens: 40 },
+      },
+    };
+    const stale = {
+      ...record,
+      message: { ...record.message, usage: { ...record.message.usage, output_tokens: 10 } },
+    };
     writeFileSync(
       join(project, "session.jsonl"),
-      `${JSON.stringify(record)}\nnot-json\n${JSON.stringify(record)}\n`,
+      `${JSON.stringify(record)}\nnot-json\n${JSON.stringify(complete)}\n${JSON.stringify(stale)}\n`,
     );
 
     assert.deepEqual(loadClaude([root]), [
@@ -46,11 +66,11 @@ test("Claude reader extracts usage and deduplicates message IDs", () => {
         model: "claude-sonnet-4",
         sessionId: "claude-session",
         input: 100,
-        output: 25,
+        output: 40,
         cacheWrite: 30,
         cacheRead: 40,
-        webSearch: 2,
-        webFetch: 1,
+        webSearch: 3,
+        webFetch: 2,
       },
     ]);
   } finally {

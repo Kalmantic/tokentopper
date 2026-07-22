@@ -3,35 +3,64 @@
 [![npm version](https://img.shields.io/npm/v/tokentopper?logo=npm)](https://www.npmjs.com/package/tokentopper)
 [![npm downloads](https://img.shields.io/npm/dm/tokentopper?logo=npm)](https://www.npmjs.com/package/tokentopper)
 [![CI](https://github.com/Kalmantic/tokentopper/actions/workflows/ci.yml/badge.svg)](https://github.com/Kalmantic/tokentopper/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Kalmantic/tokentopper/badge)](https://scorecard.dev/viewer/?uri=github.com/Kalmantic/tokentopper)
 [![license](https://img.shields.io/npm/l/tokentopper)](LICENSE)
 
-**Your Professional AI Usage Index for Claude Code, Codex, OpenCode, and Gemini CLI.** See your annual
-token run-rate, cost estimate, tier, and verified rank with one command — and break your
-AI token usage down by day, week, month, session, or 5-hour billing block.
+### One command. Four coding agents. One verified usage score.
+
+TokenTopper turns the usage already recorded by **Claude Code, Codex, OpenCode,
+and Gemini CLI** into a private local dashboard: annual token run-rate, estimated
+cost, tier, Professional AI Usage Index, and detailed activity reports. Publish a
+signed aggregate only when you want a verified leaderboard rank.
 
 ```sh
 npx tokentopper@latest
 ```
 
-Example output from the real CLI using synthetic usage data:
+No account, config file, or API key is required for your local score.
+[See verified TokenTopper ranks](https://openfactoryai.com/tools/tokentopper/?utm_source=readme&utm_medium=package&utm_campaign=tokentopper).
+
+## Your AI usage, formatted for the terminal
+
+The default command answers the useful questions first: how much you use coding
+agents, what that pace costs, and how it compares.
 
 ```text
-TokenTopper · Professional AI Usage Index
+  TokenTopper · Professional AI Usage Index
 
-Run-rate      6.33B tokens/yr   ($12.1K/yr · 15d observed x365 x1.3)
-Tier          Operator   · Index 53/100 (local estimate)
+  Run-rate      6.33B tokens/yr   ($12.1K/yr · 15d observed x365 x1.3)
+  Tier          Operator   · Index 53/100 (local estimate)
 
-All-time      200.0M tokens   $384.00   2 requests, 2 sessions
-Window        2026-07-01 → 2026-07-15 · 2 active days
-Tools         20 web searches, 10 web fetches
+  All-time      200.0M tokens   $384.00   1,284 requests, 96 sessions
+  Window        2026-07-01 → 2026-07-15 · 12 active days
+  Tools         20 web searches, 10 web fetches
 
-By model
-  claude-sonnet-4          200.0M   $384.00
+  By tool
+    claude                  120.0M   $230.40
+    codex                    52.0M   $99.84
+    opencode                 18.0M   $34.56
+    gemini                   10.0M   $19.20
+
+  By model
+    claude-sonnet-4         120.0M   $230.40
+    gpt-5.3-codex            52.0M   $99.84
+    gemini-2.5-pro           10.0M   $19.20
 ```
 
-No signup is required for a local score. TokenTopper reads local usage records but
-does not retain or transmit prompt or response content, source code, file paths, or
-branch names.
+Your prompts, responses, source code, file paths, and branch names are never
+included in the aggregate. Nothing is uploaded unless you explicitly run
+`export` or `sync`.
+
+## Why TokenTopper
+
+| Need | What you get |
+| --- | --- |
+| One view across agents | Claude Code, Codex, OpenCode, and Gemini CLI combined without losing agent/model attribution |
+| Understand the bill | Input, output, cache-write, cache-read, and model-aware cost estimates |
+| See working rhythm | Daily, weekly, monthly, per-session, and live 5-hour billing-block reports |
+| Compare your pace | Annual run-rate, eight tiers, 0–100 Index, and an AI-first benchmark |
+| Prove a public rank | Canonical Ed25519-signed aggregate; the private key stays on your machine |
+| Automate safely | Machine-readable JSON, signed sync, a read-only MCP server, and an Agent Skill |
 
 ## Install and run
 
@@ -84,6 +113,7 @@ It combines coding-agent usage into one comparable score:
 - Professional AI Usage Index from 0 to 100;
 - eight usage tiers from Curious to Legend;
 - daily, weekly, monthly, session, and 5-hour billing-block reports;
+- week-over-week/month-over-month deltas plus current and longest active streaks;
 - per-model and per-agent breakdowns, nested agent → model with `--by-tool`;
 - a benchmark insight that tells you whether you are ahead of, or falling
   behind, an AI-first engineer's pace of ~5B tokens/month (~250M per working day);
@@ -158,14 +188,23 @@ Your private key stays in `~/.tokentopper/key.json`.
 
 1. Run `npx tokentopper@latest` to see your private local score.
 2. Run `npx tokentopper@latest export --pretty` to create `signed.json`.
-3. Upload it at [openfactoryai.com/tools/tokentopper](https://openfactoryai.com/tools/tokentopper/) or link once and use `tokentopper sync`.
+3. Upload it at [openfactoryai.com/tools/tokentopper](https://openfactoryai.com/tools/tokentopper/?utm_source=readme&utm_medium=package&utm_campaign=tokentopper) or link once and use `tokentopper sync`.
 4. See where you rank globally, by country, and by city — and defend it.
 
 The signature makes the aggregate tamper-evident after export. Publishing is opt-in;
 local scoring remains private.
 
 For local automation, `tokentopper json --pretty` prints aggregate usage without a
-hostname or machine identifier. Its schema is `tokentopper-summary/1`.
+hostname or machine identifier. Its stable default schema is
+`tokentopper-summary/1`. The additive comparison-ready schema is available with
+`tokentopper json --schema 2`, `tokentopper export --schema 2`, and opt-in
+`tokentopper sync --schema 2`; it adds signed daily token categories plus nested
+agent/model detail without changing the human-readable terminal reports. Sync
+continues to default to v1 until the production API migration is complete.
+
+For a copyable Markdown result, run `tokentopper share`. It includes the
+run-rate, tier, local Index, aggregate usage, and agent names, but excludes
+session IDs, model names, machine identity, hostnames, and private paths.
 
 ## Commands
 
@@ -177,9 +216,10 @@ hostname or machine identifier. Its schema is `tokentopper-summary/1`.
 | `tokentopper monthly` | Per-month report |
 | `tokentopper session` | Per-session report across every supported agent |
 | `tokentopper blocks` | 5-hour billing blocks; the active block shows burn rate and an end-of-window projection |
-| `tokentopper json [--pretty]` | Print machine-safe aggregate JSON for scripts |
-| `tokentopper export [--out f] [--pretty]` | Write `signed.json` |
-| `tokentopper sync [--watch] [--interval min]` | Sign and POST to TokenTopper |
+| `tokentopper json [--pretty] [--schema 1\|2]` | Print machine-safe aggregate JSON for scripts |
+| `tokentopper share` | Print a privacy-safe, copyable Markdown score card |
+| `tokentopper export [--out f] [--pretty] [--schema 1\|2]` | Write `signed.json` |
+| `tokentopper sync [--schema 1\|2] [--watch] [--interval min]` | Sign and POST to TokenTopper; v1 remains the default |
 | `tokentopper login --token <t>` | Link this machine |
 | `tokentopper skill install` | Install the TokenTopper Agent Skill for Claude, Codex, and Gemini CLI |
 | `tokentopper mcp` | Run a read-only MCP server so agents can query your usage locally |
@@ -244,10 +284,30 @@ the standalone-executable adoption gate are documented in
 [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
 Exact local data formats, privacy boundaries, runtime limitations, and common fixes
 are documented in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
+The signed v1/v2 aggregate contract, comparison formulas, reconciliation rules,
+and multi-machine merge semantics are documented in
+[`docs/SCHEMA.md`](docs/SCHEMA.md).
+The run-rate, Index, tiers, benchmark, pricing limitations, efficiency
+eligibility, and UTC period rules are documented in
+[`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).
 
 Growth experiments and the path from useful CLI to repeatable discovery are tracked
 in [`docs/GROWTH.md`](docs/GROWTH.md). Contributions are welcome; start with
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Security issues should be reported privately using the process in
+[`SECURITY.md`](SECURITY.md). The assets, trust boundaries, controls, and residual
+risks are documented in [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
+Production health checks and the privacy-safe incident response process are
+documented in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+
+## Guides
+
+- [Check Claude Code token usage locally](docs/guides/claude-code-token-usage.md)
+- [Check Codex CLI token usage locally](docs/guides/codex-token-usage.md)
+- [Combine Claude Code, Codex, OpenCode, and Gemini CLI](docs/guides/multi-agent-usage-report.md)
+- [Understand cache-read tokens and estimated cost](docs/guides/cache-read-tokens.md)
+- [Add TokenTopper to an AI development workstation](docs/guides/ai-developer-setup.md)
 
 ## Credits
 

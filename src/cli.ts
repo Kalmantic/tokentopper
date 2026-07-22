@@ -4,14 +4,24 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { collectAll } from "./usage";
-import { aggregate, TIERS, toPublicAggregate, type Aggregate } from "./report";
 import {
+  aggregate,
+  aggregateV2,
+  TIERS,
+  toPublicAggregate,
+  toPublicAggregateV2,
+  type Aggregate,
+  type AggregateV2,
+} from "./report";
+import {
+  activityStreak,
   BENCHMARK_TOKENS_PER_MONTH,
   BENCHMARK_TOKENS_PER_WORKDAY,
   benchmarkInsight,
   blocksReport,
   dailyReport,
   monthlyReport,
+  periodComparison,
   sessionReport,
   totalsOf,
   weeklyReport,
@@ -28,6 +38,8 @@ import packageJson from "../package.json" with { type: "json" };
 
 const VERSION = packageJson.version;
 const SITE = "https://openfactoryai.com/tools/tokentopper/";
+const SHARE_SITE = `${SITE}?utm_source=cli_share&utm_medium=markdown&utm_campaign=tokentopper`;
+const REPOSITORY = "https://github.com/Kalmantic/tokentopper";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const argv = process.argv.slice(2);
@@ -41,6 +53,13 @@ function flag(name: string): string | undefined {
 }
 function has(name: string): boolean {
   return argv.includes(`--${name}`);
+}
+
+function schemaVersion(): 1 | 2 {
+  const value = flag("schema");
+  if (!value || value === "1" || value === "v1" || value === "tokentopper/1") return 1;
+  if (value === "2" || value === "v2" || value === "tokentopper/2") return 2;
+  throw new Error(`Unknown --schema "${value}". Use 1 or 2.`);
 }
 
 // ---------- formatting ----------
@@ -60,10 +79,11 @@ function fmtUSD(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
-async function build(): Promise<Aggregate | null> {
+async function build(schema: 1 | 2 = 1): Promise<Aggregate | AggregateV2 | null> {
   const recs = await collectAll();
   if (recs.length === 0) return null;
-  return aggregate(recs, VERSION, Date.now());
+  const now = Date.now();
+  return schema === 2 ? aggregateV2(recs, VERSION, now) : aggregate(recs, VERSION, now);
 }
 
 function noData(): never {
@@ -140,6 +160,21 @@ function printInsight(recs: Rec[]): void {
       ? `            ${green("You're ahead of the pack — claim your verified rank before someone takes it.")}`
       : `            You're falling behind — push your AI tools to the limit and let them work for you.`,
   );
+  const week = periodComparison(recs, "week");
+  const month = periodComparison(recs, "month");
+  const delta = (value: number | null) => value === null ? "new" : `${value >= 0 ? "+" : ""}${(value * 100).toFixed(0)}%`;
+  if (week || month) {
+    const parts = [
+      ...(week ? [`week ${fmtTokens(week.current.tokens)} vs ${fmtTokens(week.previous.tokens)} (${delta(week.tokenChangeRatio)})`] : []),
+      ...(month ? [`month ${fmtTokens(month.current.tokens)} vs ${fmtTokens(month.previous.tokens)} (${delta(month.tokenChangeRatio)})`] : []),
+    ];
+    console.log(`  ${bold("Trend")}     ${dim(parts.join(" · "))}`);
+  }
+  const streak = activityStreak(recs);
+  if (streak) {
+    console.log(`  ${bold("Streak")}    ${dim(`${streak.currentDays} active day${streak.currentDays === 1 ? "" : "s"} · best ${streak.longestDays} · through ${streak.lastActive}`)}`);
+  }
+  console.log(`  ${bold("Star")}      ${dim("Useful?")} ${REPOSITORY}`);
   console.log(`  ${bold("Rank")}      See where you stand ${bold("globally, by country, and by city")}:`);
   console.log(`            ${green("tokentopper export")} ${dim("→ upload signed.json at")} ${SITE}`);
   console.log("");
@@ -295,7 +330,7 @@ function doReport(command: ReportCommand, recs: Awaited<ReturnType<typeof collec
   if (report.rows.length > 0) printInsight(recs);
 }
 
-function doExport(agg: Aggregate): void {
+function doExport(agg: Aggregate | AggregateV2): void {
   const signed = signAggregate(agg);
   const out = resolve(flag("out") || "signed.json");
   writeFileSync(out, JSON.stringify(signed, null, has("pretty") ? 2 : 0));
@@ -304,11 +339,29 @@ function doExport(agg: Aggregate): void {
   console.log(dim(`  Upload it at ${SITE}`));
 }
 
-function doJson(agg: Aggregate): void {
-  console.log(JSON.stringify(toPublicAggregate(agg), null, has("pretty") ? 2 : 0));
+function doJson(agg: Aggregate | AggregateV2): void {
+  const publicAggregate = agg.schema === "tokentopper/2" ? toPublicAggregateV2(agg) : toPublicAggregate(agg);
+  console.log(JSON.stringify(publicAggregate, null, has("pretty") ? 2 : 0));
 }
 
-async function doSync(agg: Aggregate): Promise<void> {
+function doShare(agg: Aggregate): void {
+  const agents = Object.keys(agg.byTool).sort().map((tool) =>
+    tool === "claude" ? "Claude Code" : tool === "gemini" ? "Gemini CLI" : tool[0]!.toUpperCase() + tool.slice(1)
+  );
+  console.log([
+    "## My TokenTopper score",
+    "",
+    `- **Run-rate:** ${fmtTokens(agg.runRate.tokensPerYear)} tokens/year`,
+    `- **Tier:** ${agg.tier}`,
+    `- **Professional AI Usage Index:** ${agg.index}/100 (local estimate)`,
+    `- **All-time usage:** ${fmtTokens(agg.totals.tokens)} tokens across ${agg.window.activeDays} active UTC days`,
+    `- **Coding agents:** ${agents.join(", ")}`,
+    "",
+    `[Measured locally with TokenTopper](${SHARE_SITE}) — no prompts, source code, file paths, hostname, or machine ID included.`,
+  ].join("\n"));
+}
+
+async function doSync(agg: Aggregate | AggregateV2, rebuild: () => Promise<Aggregate | AggregateV2 | null>): Promise<void> {
   const endpoint = resolveEndpoint(flag("endpoint"));
   const token = resolveToken(flag("token"));
   if (!token) {
@@ -328,14 +381,14 @@ async function doSync(agg: Aggregate): Promise<void> {
     console.log(dim(`Watching. Re-syncing every ${minutes} min. Ctrl-C to stop.`));
     setInterval(
       () => {
-        void build().then((fresh) => { if (fresh) return push(endpoint, token, signAggregate(fresh)); });
+        void rebuild().then((fresh) => { if (fresh) return push(endpoint, token, signAggregate(fresh)); });
       },
       Math.max(1, minutes) * 60_000,
     );
   }
 }
 
-async function push(endpoint: string, token: string, signed: Signed<Aggregate>): Promise<void> {
+async function push<T extends Aggregate | AggregateV2>(endpoint: string, token: string, signed: Signed<T>): Promise<void> {
   try {
     const res = await fetch(endpoint, {
       method: "POST",
@@ -413,6 +466,7 @@ ${bold("Usage")}
   tokentopper session         Per-session tokens and cost
   tokentopper blocks          5-hour billing blocks, with the active block marked
   tokentopper json            Print machine-safe aggregate JSON
+  tokentopper share           Print a privacy-safe Markdown score card
   tokentopper export          Write a signed.json you can upload
   tokentopper sync            Sign and push your usage to TokenTopper
   tokentopper login           Link this machine with your CLI token
@@ -430,6 +484,7 @@ ${bold("Options")}
   --compact        reports: drop the cache columns for narrow terminals
   --no-cost        reports: hide the cost column
   --pretty         json/export: pretty-print the JSON
+  --schema <1|2>   json/export/sync: payload schema (default 1; v2 adds daily detail)
   --endpoint <url> sync/login: override the upload endpoint
   --token <token>  sync/login: your CLI token
   --watch          sync: keep running and re-sync on an interval
@@ -464,16 +519,42 @@ async function main(): Promise<void> {
 
   const recs = await collectAll();
   if (recs.length === 0) noData();
-  const agg = aggregate(recs, VERSION, Date.now());
-  if (has("json")) return doJson(agg);
+  const now = Date.now();
+  const agg = aggregate(recs, VERSION, now);
+  if (has("json")) {
+    try {
+      return doJson(schemaVersion() === 2 ? aggregateV2(recs, VERSION, now) : agg);
+    } catch (e) {
+      console.error((e as Error).message);
+      process.exit(1);
+    }
+  }
 
   switch (command) {
     case "json":
-      return doJson(agg);
+      try {
+        return doJson(schemaVersion() === 2 ? aggregateV2(recs, VERSION, now) : agg);
+      } catch (e) {
+        console.error((e as Error).message);
+        process.exit(1);
+      }
     case "export":
-      return doExport(agg);
+      try {
+        return doExport(schemaVersion() === 2 ? aggregateV2(recs, VERSION, now) : agg);
+      } catch (e) {
+        console.error((e as Error).message);
+        process.exit(1);
+      }
+    case "share":
+      return doShare(agg);
     case "sync":
-      return doSync(agg);
+      try {
+        const schema = schemaVersion();
+        return doSync(schema === 2 ? aggregateV2(recs, VERSION, now) : agg, () => build(schema));
+      } catch (e) {
+        console.error((e as Error).message);
+        process.exit(1);
+      }
     case "summary":
       return summary(agg, recs);
     default:

@@ -1,0 +1,64 @@
+name: Sync feedback
+description: Report an opt-in TokenTopper login, export, or sync problem without sharing private usage data.
+title: "sync: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve TokenTopper sync. Do not attach `signed.json`, CLI tokens, prompts, responses, session logs, source code, file paths, hostnames, or machine IDs. Redact those values from copied errors.
+  - type: input
+    id: version
+    attributes:
+      label: TokenTopper version
+      description: Run `tokentopper --version`.
+      placeholder: 0.8.0
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: operation
+    attributes:
+      label: Operation
+      options:
+        - login
+        - export
+        - sync
+        - sync --watch
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Redacted result
+      description: Describe what happened and include only the HTTP status or redacted error text.
+      placeholder: Expected sync to succeed; received HTTP 401. No token or payload attached.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Use placeholders such as `<token>` and `<path>` for sensitive values.
+      placeholder: |
+        1. Ran `tokentopper login --token <token>`
+        2. Ran `tokentopper sync`
+        3. Received the redacted result above
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed tokens, payloads, logs, prompts, source code, paths, hostnames, and machine IDs.
+          required: true

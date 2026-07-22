@@ -56,8 +56,46 @@ export interface Aggregate {
   machine: { id: string; hostname: string; os: string };
 }
 
+export interface DetailedUsage {
+  tokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheCreationTokens: number;
+  cacheReadTokens: number;
+  costUSD: number;
+  requests: number;
+  sessions: number;
+  webSearches: number;
+  webFetches: number;
+}
+
+export interface DailyModelUsage extends DetailedUsage {}
+
+export interface DailyToolUsage extends DetailedUsage {
+  byModel: Record<string, DailyModelUsage>;
+}
+
+export interface DailyUsage extends DetailedUsage {
+  byModel: Record<string, DailyModelUsage>;
+  byTool: Record<string, DailyToolUsage>;
+}
+
+/**
+ * The comparison-ready signed schema. Unlike `tokentopper/1`, every day keeps
+ * enough detail for historical and per-agent leaderboards to be reproduced by
+ * a verifier without receiving raw session logs.
+ */
+export interface AggregateV2 extends Omit<Aggregate, "schema" | "byDay"> {
+  schema: "tokentopper/2";
+  byDay: Record<string, DailyUsage>;
+}
+
 export type PublicAggregate = Omit<Aggregate, "schema" | "machine"> & {
   schema: "tokentopper-summary/1";
+};
+
+export type PublicAggregateV2 = Omit<AggregateV2, "schema" | "machine"> & {
+  schema: "tokentopper-summary/2";
 };
 
 // Script-friendly output excludes stable machine IDs and hostnames so piping
@@ -65,6 +103,11 @@ export type PublicAggregate = Omit<Aggregate, "schema" | "machine"> & {
 export function toPublicAggregate(agg: Aggregate): PublicAggregate {
   const { schema: _schema, machine: _machine, ...rest } = agg;
   return { schema: "tokentopper-summary/1", ...rest };
+}
+
+export function toPublicAggregateV2(agg: AggregateV2): PublicAggregateV2 {
+  const { schema: _schema, machine: _machine, ...rest } = agg;
+  return { schema: "tokentopper-summary/2", ...rest };
 }
 
 const DAY_MS = 86_400_000;
@@ -88,19 +131,6 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
   const sessions = new Set<string>();
   let minTs = Infinity;
   let maxTs = -Infinity;
-
-  // Run-rate = the stronger of this month and last month, annualized with a
-  // modest growth factor, so a partial or quiet month never understates you.
-  const d0 = new Date(now);
-  const ym = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
-  const curYM = ym(d0.getUTCFullYear(), d0.getUTCMonth());
-  const prevY = d0.getUTCMonth() === 0 ? d0.getUTCFullYear() - 1 : d0.getUTCFullYear();
-  const prevM = d0.getUTCMonth() === 0 ? 11 : d0.getUTCMonth() - 1;
-  const lastYM = ym(prevY, prevM);
-  let curMonthTokens = 0;
-  let curMonthCost = 0;
-  let lastMonthTokens = 0;
-  let lastMonthCost = 0;
 
   for (const r of recs) {
     const tokens = r.input + r.output + r.cacheWrite + r.cacheRead;
@@ -143,14 +173,6 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
       if (t < minTs) minTs = t;
       if (t > maxTs) maxTs = t;
     }
-    const mo = r.day.slice(0, 7);
-    if (mo === curYM) {
-      curMonthTokens += tokens;
-      curMonthCost += cost;
-    } else if (mo === lastYM) {
-      lastMonthTokens += tokens;
-      lastMonthCost += cost;
-    }
   }
 
   totals.sessions = sessions.size;
@@ -165,10 +187,6 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
   const days = Math.max(1, spanDays);
   const tokensPerYear = Math.round((totals.tokens / days) * 365 * GROWTH);
   const costPerYear = round2((totals.costUSD / days) * 365 * GROWTH);
-  void curMonthTokens;
-  void curMonthCost;
-  void lastMonthTokens;
-  void lastMonthCost;
 
   for (const k of Object.keys(byModel)) byModel[k]!.costUSD = round2(byModel[k]!.costUSD);
   for (const k of Object.keys(byTool)) byTool[k]!.costUSD = round2(byTool[k]!.costUSD);
@@ -188,6 +206,206 @@ export function aggregate(recs: Rec[], version: string, now: number): Aggregate 
     byDay,
     machine: { id: machineId(), hostname: hostname(), os: platform() },
   };
+}
+
+interface MutableDetailedUsage extends DetailedUsage {
+  sessionIds: Set<string>;
+}
+
+interface MutableDailyModelUsage extends MutableDetailedUsage {}
+
+interface MutableDailyToolUsage extends MutableDetailedUsage {
+  byModel: Record<string, MutableDailyModelUsage>;
+}
+
+interface MutableDailyUsage extends MutableDetailedUsage {
+  byModel: Record<string, MutableDailyModelUsage>;
+  byTool: Record<string, MutableDailyToolUsage>;
+}
+
+function emptyDetailedUsage(): MutableDetailedUsage {
+  return {
+    tokens: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheCreationTokens: 0,
+    cacheReadTokens: 0,
+    costUSD: 0,
+    requests: 0,
+    sessions: 0,
+    webSearches: 0,
+    webFetches: 0,
+    sessionIds: new Set<string>(),
+  };
+}
+
+function addDetailedUsage(target: MutableDetailedUsage, rec: Rec, cost: number, sessionKey: string): void {
+  const tokens = rec.input + rec.output + rec.cacheWrite + rec.cacheRead;
+  target.tokens += tokens;
+  target.inputTokens += rec.input;
+  target.outputTokens += rec.output;
+  target.cacheCreationTokens += rec.cacheWrite;
+  target.cacheReadTokens += rec.cacheRead;
+  target.costUSD += cost;
+  target.requests += 1;
+  target.webSearches += rec.webSearch;
+  target.webFetches += rec.webFetch;
+  target.sessionIds.add(sessionKey);
+}
+
+function finishDetailedUsage(value: MutableDetailedUsage): DetailedUsage {
+  const { sessionIds, ...rest } = value;
+  return { ...rest, costUSD: round2(rest.costUSD), sessions: sessionIds.size };
+}
+
+function recordDay(rec: Rec): string | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rec.day)) {
+    const parsed = new Date(`${rec.day}T00:00:00.000Z`);
+    if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === rec.day) return rec.day;
+  }
+  const timestamp = new Date(rec.ts);
+  return Number.isNaN(timestamp.getTime()) ? null : timestamp.toISOString().slice(0, 10);
+}
+
+function detailedDays(recs: Rec[]): Record<string, DailyUsage> {
+  const days: Record<string, MutableDailyUsage> = {};
+  for (const rec of recs) {
+    const day = recordDay(rec);
+    if (!day) continue;
+    const cost = rec.costUSD ?? costUSD(rec.provider, rec.model, {
+      input: rec.input,
+      output: rec.output,
+      cacheWrite: rec.cacheWrite,
+      cacheRead: rec.cacheRead,
+    });
+    const daily = (days[day] ??= { ...emptyDetailedUsage(), byModel: {}, byTool: {} });
+    const sessionKey = `${rec.tool}:${rec.sessionId}`;
+    addDetailedUsage(daily, rec, cost, sessionKey);
+
+    const model = (daily.byModel[rec.model] ??= { ...emptyDetailedUsage() });
+    addDetailedUsage(model, rec, cost, sessionKey);
+
+    const tool = (daily.byTool[rec.tool] ??= { ...emptyDetailedUsage(), byModel: {} });
+    addDetailedUsage(tool, rec, cost, rec.sessionId);
+    const toolModel = (tool.byModel[rec.model] ??= { ...emptyDetailedUsage() });
+    addDetailedUsage(toolModel, rec, cost, rec.sessionId);
+  }
+
+  const result: Record<string, DailyUsage> = {};
+  for (const day of Object.keys(days).sort()) {
+    const source = days[day]!;
+    const byModel: Record<string, DailyModelUsage> = {};
+    for (const model of Object.keys(source.byModel).sort()) {
+      byModel[model] = finishDetailedUsage(source.byModel[model]!);
+    }
+    const byTool: Record<string, DailyToolUsage> = {};
+    for (const toolName of Object.keys(source.byTool).sort()) {
+      const sourceTool = source.byTool[toolName]!;
+      const toolModels: Record<string, DailyModelUsage> = {};
+      for (const model of Object.keys(sourceTool.byModel).sort()) {
+        toolModels[model] = finishDetailedUsage(sourceTool.byModel[model]!);
+      }
+      byTool[toolName] = { ...finishDetailedUsage(sourceTool), byModel: toolModels };
+    }
+    result[day] = { ...finishDetailedUsage(source), byModel, byTool };
+  }
+  return result;
+}
+
+/**
+ * Build the additive v2 payload without changing the established v1 CLI/API
+ * contract. Records without a valid UTC day (including a recoverable day from
+ * their timestamp) are excluded because a historical rank must be reproducible.
+ */
+export function aggregateV2(recs: Rec[], version: string, now: number): AggregateV2 {
+  const dated = recs.flatMap((rec) => {
+    const day = recordDay(rec);
+    return day ? [{ ...rec, day }] : [];
+  });
+  const base = aggregate(dated, version, now);
+  const { schema: _schema, byDay: _byDay, ...rest } = base;
+  return { ...rest, schema: "tokentopper/2", byDay: detailedDays(dated) };
+}
+
+const COUNT_KEYS = [
+  "tokens",
+  "inputTokens",
+  "outputTokens",
+  "cacheCreationTokens",
+  "cacheReadTokens",
+  "requests",
+  "sessions",
+  "webSearches",
+  "webFetches",
+] as const;
+
+function validateDetailedUsage(value: DetailedUsage, path: string, errors: string[]): void {
+  for (const key of COUNT_KEYS) {
+    if (!Number.isSafeInteger(value[key]) || value[key] < 0) errors.push(`${path}.${key} must be a non-negative safe integer`);
+  }
+  if (!Number.isFinite(value.costUSD) || value.costUSD < 0) errors.push(`${path}.costUSD must be a non-negative finite number`);
+  const tokenSum = value.inputTokens + value.outputTokens + value.cacheCreationTokens + value.cacheReadTokens;
+  if (value.tokens !== tokenSum) errors.push(`${path}.tokens does not equal its token categories`);
+}
+
+function summed(items: DetailedUsage[], key: keyof DetailedUsage): number {
+  return items.reduce((total, item) => total + item[key], 0);
+}
+
+function validatePartition(parent: DetailedUsage, children: DetailedUsage[], path: string, errors: string[], sessionsPartition: boolean): void {
+  for (const key of COUNT_KEYS) {
+    if (key === "sessions" && !sessionsPartition) continue;
+    if (summed(children, key) !== parent[key]) errors.push(`${path}.${key} does not reconcile to its children`);
+  }
+  const childCost = summed(children, "costUSD");
+  if (Math.abs(childCost - parent.costUSD) > Math.max(0.01, children.length * 0.01)) {
+    errors.push(`${path}.costUSD does not reconcile to its children`);
+  }
+}
+
+/** Return every structural/reconciliation error in a comparison-ready payload. */
+export function validateAggregateV2(agg: AggregateV2): string[] {
+  const errors: string[] = [];
+  if (agg.schema !== "tokentopper/2") errors.push("schema must be tokentopper/2");
+  const days = Object.entries(agg.byDay);
+  for (const [day, value] of days) {
+    const parsedDay = new Date(`${day}T00:00:00.000Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(parsedDay.getTime()) || parsedDay.toISOString().slice(0, 10) !== day) {
+      errors.push(`byDay.${day} is not a valid UTC date key`);
+    }
+    validateDetailedUsage(value, `byDay.${day}`, errors);
+    const models = Object.values(value.byModel);
+    const tools = Object.values(value.byTool);
+    for (const [model, modelValue] of Object.entries(value.byModel)) validateDetailedUsage(modelValue, `byDay.${day}.byModel.${model}`, errors);
+    for (const [toolName, toolValue] of Object.entries(value.byTool)) {
+      validateDetailedUsage(toolValue, `byDay.${day}.byTool.${toolName}`, errors);
+      const toolModels = Object.values(toolValue.byModel);
+      for (const [model, modelValue] of Object.entries(toolValue.byModel)) {
+        validateDetailedUsage(modelValue, `byDay.${day}.byTool.${toolName}.byModel.${model}`, errors);
+      }
+      validatePartition(toolValue, toolModels, `byDay.${day}.byTool.${toolName}.byModel`, errors, false);
+    }
+    validatePartition(value, models, `byDay.${day}.byModel`, errors, false);
+    validatePartition(value, tools, `byDay.${day}.byTool`, errors, true);
+  }
+
+  const dayValues = days.map(([, value]) => value);
+  const totalMap: Record<keyof DetailedUsage, number> = {
+    tokens: agg.totals.tokens,
+    inputTokens: agg.totals.inputTokens,
+    outputTokens: agg.totals.outputTokens,
+    cacheCreationTokens: agg.totals.cacheCreationTokens,
+    cacheReadTokens: agg.totals.cacheReadTokens,
+    costUSD: agg.totals.costUSD,
+    requests: agg.totals.requests,
+    sessions: agg.totals.sessions,
+    webSearches: agg.totals.webSearches,
+    webFetches: agg.totals.webFetches,
+  };
+  validateDetailedUsage(totalMap, "totals", errors);
+  validatePartition(totalMap, dayValues, "byDay", errors, false);
+  if (agg.window.activeDays !== days.length) errors.push("window.activeDays does not equal the number of daily buckets");
+  return errors;
 }
 
 function round2(n: number): number {

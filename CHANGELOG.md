@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.8.0...tokentopper-v0.9.0) (2026-07-22)
+
+
+### Features
+
+* add CCRank parity foundation ([#68](https://github.com/Kalmantic/tokentopper/issues/68)) ([c6b97aa](https://github.com/Kalmantic/tokentopper/commit/c6b97aab9d11f41ef70724fd16e4806a0077a7f7))
+
 ## [0.8.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.7.1...tokentopper-v0.8.0) (2026-07-20)
 
 

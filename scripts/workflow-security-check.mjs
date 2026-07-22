@@ -91,6 +91,10 @@ assert.equal(occurrences(jsrPublish, /^\s+run:.*\bjsr publish\b/gm), 1, "JSR pub
 
 const scorecardAnalysis = job(scorecard, "analysis");
 assert.match(scorecard, /\npermissions: read-all\n/, "scorecard.yml must default to read-only permissions");
+assert.match(scorecard, /\n  workflow_dispatch:\n/, "Scorecard must support manual verification runs");
+for (const permission of ["checks", "contents", "issues", "pull-requests"]) {
+  assert.match(scorecardAnalysis, new RegExp(`\\n      ${permission}: read\\n`), `Scorecard must read ${permission}`);
+}
 assert.match(scorecardAnalysis, /\n      security-events: write\n/, "Scorecard must write its SARIF result");
 assert.match(scorecardAnalysis, /\n      id-token: write\n/, "Scorecard publishing must use OIDC");
 assert.match(scorecardAnalysis, /\n          persist-credentials: false\n/, "Scorecard checkout must not persist credentials");

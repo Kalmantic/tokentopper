@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  activityStreak,
   benchmarkInsight,
   blocksReport,
   dailyReport,
   filterByDay,
   monthlyReport,
   normalizeDay,
+  periodComparison,
   sessionReport,
   totalsOf,
   weekStart,
@@ -172,4 +174,34 @@ test("totalsOf sums rows and rounds cost", () => {
   assert.equal(total.tokens, 400);
   assert.equal(total.requests, 2);
   assert.equal(total.costUSD, Math.round(total.costUSD * 100) / 100);
+});
+
+test("periodComparison reports adjacent week and month deltas, including empty periods", () => {
+  const recs = [
+    rec({ day: "2026-06-28", ts: "2026-06-28T10:00:00.000Z", input: 100 }),
+    rec({ day: "2026-07-05", ts: "2026-07-05T10:00:00.000Z", input: 200 }),
+  ];
+  const week = periodComparison(recs, "week");
+  assert.equal(week?.current.key, "2026-07-05");
+  assert.equal(week?.previous.key, "2026-06-28");
+  assert.equal(week?.current.tokens, 300);
+  assert.equal(week?.previous.tokens, 200);
+  assert.equal(week?.tokenChangeRatio, 0.5);
+
+  const month = periodComparison([rec({ day: "2026-07-05" })], "month");
+  assert.equal(month?.previous.key, "2026-06");
+  assert.equal(month?.previous.tokens, 0);
+  assert.equal(month?.tokenChangeRatio, null);
+});
+
+test("activityStreak reports the current and longest UTC active-day runs", () => {
+  const streak = activityStreak([
+    rec({ day: "2026-06-28" }),
+    rec({ day: "2026-06-29" }),
+    rec({ day: "2026-06-30" }),
+    rec({ day: "2026-07-02" }),
+    rec({ day: "2026-07-03" }),
+  ]);
+  assert.deepEqual(streak, { currentDays: 2, longestDays: 3, lastActive: "2026-07-03" });
+  assert.equal(activityStreak([]), null);
 });

@@ -1,0 +1,41 @@
+name: Sync API health
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: sync-api-health
+  cancel-in-progress: true
+
+jobs:
+  health:
+    name: Production health contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HEALTH_URL: https://tokentopper-api-398148474652.us-central1.run.app/health
+    steps:
+      - name: Verify health response
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error \
+            --retry 2 --retry-all-errors --retry-delay 2 \
+            --connect-timeout 5 --max-time 15 \
+            "$HEALTH_URL")"
+          HEALTH_RESPONSE="$response" python3 - <<'PY'
+          import json
+          import os
+
+          payload = json.loads(os.environ["HEALTH_RESPONSE"])
+          if payload.get("ok") is not True:
+              raise SystemExit("health response did not contain ok=true")
+          if payload.get("service") != "tokentopper-api":
+              raise SystemExit("health response named an unexpected service")
+          if not isinstance(payload.get("ts"), (int, float)):
+              raise SystemExit("health response did not contain a numeric timestamp")
+          PY

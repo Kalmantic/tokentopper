@@ -16,9 +16,15 @@ const workflows = new Map(
 const release = workflows.get("release.yml");
 const jsr = workflows.get("jsr.yml");
 const standaloneCandidates = workflows.get("standalone-candidates.yml");
+const scorecard = workflows.get("scorecard.yml");
+const osvScanner = workflows.get("osv-scanner.yml");
+const apiHealth = workflows.get("api-health.yml");
 assert(release, "release.yml is missing");
 assert(jsr, "jsr.yml is missing");
 assert(standaloneCandidates, "standalone-candidates.yml is missing");
+assert(scorecard, "scorecard.yml is missing");
+assert(osvScanner, "osv-scanner.yml is missing");
+assert(apiHealth, "api-health.yml is missing");
 
 function job(source, name) {
   const marker = `\n  ${name}:\n`;
@@ -36,6 +42,11 @@ function occurrences(source, pattern) {
 const forbiddenCredential = /\b(?:NODE_AUTH_TOKEN|NPM_TOKEN|NPMJS_TOKEN)\b|_authToken/i;
 for (const [name, source] of workflows) {
   assert(!forbiddenCredential.test(source), `${name} contains a reusable npm credential variable`);
+  for (const match of source.matchAll(/^\s+uses:\s+([^\s@]+)@([^\s#]+)/gm)) {
+    const [, action, ref] = match;
+    if (action.startsWith("./")) continue;
+    assert.match(ref, /^[0-9a-f]{40}$/, `${name} must pin ${action} to an immutable commit`);
+  }
 }
 
 for (const [name, source] of [["release.yml", release], ["jsr.yml", jsr]]) {
@@ -78,4 +89,23 @@ assert.match(jsrPublish, /\n      id-token: write\n/, "JSR publish must mint a s
 assert.match(jsrPublish, /\n          package-manager-cache: false\n/, "JSR publish must disable package-manager caching");
 assert.equal(occurrences(jsrPublish, /^\s+run:.*\bjsr publish\b/gm), 1, "JSR publish must contain exactly one registry publish command");
 
-console.log("verified release workflow OIDC, environment, cache, and credential policy");
+const scorecardAnalysis = job(scorecard, "analysis");
+assert.match(scorecard, /\npermissions: read-all\n/, "scorecard.yml must default to read-only permissions");
+assert.match(scorecardAnalysis, /\n      security-events: write\n/, "Scorecard must write its SARIF result");
+assert.match(scorecardAnalysis, /\n      id-token: write\n/, "Scorecard publishing must use OIDC");
+assert.match(scorecardAnalysis, /\n          persist-credentials: false\n/, "Scorecard checkout must not persist credentials");
+assert.match(scorecardAnalysis, /\n          publish_results: true\n/, "Scorecard must publish results for the public badge");
+
+const osvScan = job(osvScanner, "scan");
+assert.match(osvScanner, /\npermissions: \{\}\n/, "osv-scanner.yml must deny permissions at workflow scope");
+assert.match(osvScan, /\n      fail-on-vuln: false\n/, "OSV Scanner is a signal-only gate until its baseline is established");
+assert.match(osvScan, /\n      upload-sarif: true\n/, "OSV Scanner must publish findings to code scanning");
+
+const apiHealthJob = job(apiHealth, "health");
+assert.match(apiHealth, /\npermissions: \{\}\n/, "api-health.yml must deny permissions at workflow scope");
+assert.match(apiHealth, /\n    - cron: "17,47 \* \* \* \*"\n/, "API health must run twice per hour");
+assert.match(apiHealthJob, /HEALTH_URL: https:\/\/[^\s]+\/health\n/, "API health must use an HTTPS health endpoint");
+assert.match(apiHealthJob, /curl --fail --silent --show-error/, "API health must fail on HTTP errors");
+assert.doesNotMatch(apiHealthJob, /authorization|signed\.json|machineId|publicKey|secrets\./i, "API health must not send credentials or usage identity");
+
+console.log("verified release, scanner, and health workflow security policy");

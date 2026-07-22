@@ -261,6 +261,22 @@ export interface Insight {
   ahead: boolean; // at or above the benchmark pace
 }
 
+export interface PeriodComparison {
+  period: "week" | "month";
+  current: { key: string; tokens: number; costUSD: number };
+  previous: { key: string; tokens: number; costUSD: number };
+  tokenChange: number;
+  tokenChangeRatio: number | null;
+  costChangeUSD: number;
+  costChangeRatio: number | null;
+}
+
+export interface ActivityStreak {
+  currentDays: number;
+  longestDays: number;
+  lastActive: string;
+}
+
 export function benchmarkInsight(recs: Rec[]): Insight | null {
   const months = monthlyReport(recs);
   const latest = months[months.length - 1];
@@ -272,6 +288,51 @@ export function benchmarkInsight(recs: Rec[]): Insight | null {
     benchmarkShare: latest.tokens / BENCHMARK_TOKENS_PER_MONTH,
     ahead: latest.tokens >= BENCHMARK_TOKENS_PER_MONTH,
   };
+}
+
+function previousMonth(key: string): string {
+  const [year, month] = key.split("-").map(Number);
+  return new Date(Date.UTC(year!, month! - 2, 1)).toISOString().slice(0, 7);
+}
+
+function comparison(current: ReportRow, previousKey: string, previous: ReportRow | undefined, period: "week" | "month"): PeriodComparison {
+  const previousTokens = previous?.tokens ?? 0;
+  const previousCost = previous?.costUSD ?? 0;
+  return {
+    period,
+    current: { key: current.key, tokens: current.tokens, costUSD: current.costUSD },
+    previous: { key: previousKey, tokens: previousTokens, costUSD: previousCost },
+    tokenChange: current.tokens - previousTokens,
+    tokenChangeRatio: previousTokens > 0 ? (current.tokens - previousTokens) / previousTokens : null,
+    costChangeUSD: round2(current.costUSD - previousCost),
+    costChangeRatio: previousCost > 0 ? (current.costUSD - previousCost) / previousCost : null,
+  };
+}
+
+/** Compare the latest active calendar period with the immediately preceding one. */
+export function periodComparison(recs: Rec[], period: "week" | "month", opts: ReportOptions = {}): PeriodComparison | null {
+  const rows = period === "week" ? weeklyReport(recs, opts) : monthlyReport(recs, opts);
+  const current = rows[rows.length - 1];
+  if (!current) return null;
+  const previousKey = period === "week"
+    ? new Date(Date.parse(`${current.key}T00:00:00.000Z`) - 7 * 86_400_000).toISOString().slice(0, 10)
+    : previousMonth(current.key);
+  return comparison(current, previousKey, rows.find((row) => row.key === previousKey), period);
+}
+
+/** Consecutive UTC active-day streak ending at the latest recorded activity. */
+export function activityStreak(recs: Rec[], opts: ReportOptions = {}): ActivityStreak | null {
+  const days = dailyReport(recs, opts).map((row) => row.key);
+  if (days.length === 0) return null;
+  let longestDays = 1;
+  let run = 1;
+  for (let index = 1; index < days.length; index += 1) {
+    const previous = Date.parse(`${days[index - 1]}T00:00:00.000Z`);
+    const current = Date.parse(`${days[index]}T00:00:00.000Z`);
+    run = current - previous === 86_400_000 ? run + 1 : 1;
+    if (run > longestDays) longestDays = run;
+  }
+  return { currentDays: run, longestDays, lastActive: days[days.length - 1]! };
 }
 
 export function totalsOf(rows: ReportRow[]): ModelUsage {

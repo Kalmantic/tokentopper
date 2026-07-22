@@ -19,12 +19,13 @@ assert(npmCli, "pack:check must run through npm so npm_execpath is available");
 const temp = mkdtempSync(join(tmpdir(), "tokentopper-pack-check-"));
 
 function run(command, args, options = {}) {
+  const { allowFailure = false, ...spawnOptions } = options;
   const result = spawnSync(command, args, {
     cwd: root,
     encoding: "utf8",
-    ...options,
+    ...spawnOptions,
   });
-  if (result.status !== 0) {
+  if (result.status !== 0 && !allowFailure) {
     throw new Error(
       `${command} ${args.join(" ")} failed (${result.status})\n${result.stdout ?? ""}\n${result.stderr ?? ""}`,
     );
@@ -127,12 +128,40 @@ try {
       }),
     ].join("\n") + "\n",
   );
-  assert.match(cli([], { cwd: installDir, env }).stdout, /TokenTopper/);
+  const summaryOutput = cli([], { cwd: installDir, env }).stdout;
+  const plainSummary = summaryOutput.replace(/\x1b\[[0-9;]*m/g, "");
+  assert.match(plainSummary, /TokenTopper · Professional AI Usage Index/);
+  assert.match(plainSummary, /^  Run-rate\s+/m);
+  assert.match(plainSummary, /^  Tier\s+/m);
+  assert.match(plainSummary, /^  All-time\s+/m);
+  assert.match(plainSummary, /^  By tool$/m);
+  assert.match(plainSummary, /^  Trend\s+/m);
+  assert.match(plainSummary, /^  Streak\s+/m);
+  assert.match(plainSummary, /^  Star\s+.*github\.com\/Kalmantic\/tokentopper$/m);
+  assert.match(plainSummary, /^  Rank\s+/m);
+
+  const shareOutput = cli(["share"], { cwd: installDir, env }).stdout;
+  assert.match(shareOutput, /^## My TokenTopper score$/m);
+  assert.match(shareOutput, /Professional AI Usage Index/);
+  assert.match(shareOutput, /Claude Code, Gemini CLI/);
+  assert.match(shareOutput, /utm_source=cli_share/);
+  assert.doesNotMatch(shareOutput, /pack-check/);
+  assert.doesNotMatch(shareOutput, new RegExp(homeDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
   const jsonSummary = JSON.parse(cli(["json", "--pretty"], { cwd: installDir, env }).stdout);
   assert.equal(jsonSummary.schema, "tokentopper-summary/1");
   assert.equal("machine" in jsonSummary, false);
   assert.deepEqual(Object.keys(jsonSummary.byTool).sort(), ["claude", "gemini"]);
+
+  const jsonSummaryV2 = JSON.parse(cli(["json", "--schema", "2", "--pretty"], { cwd: installDir, env }).stdout);
+  assert.equal(jsonSummaryV2.schema, "tokentopper-summary/2");
+  assert.equal("machine" in jsonSummaryV2, false);
+  assert.equal(jsonSummaryV2.byDay["2026-07-01"].byTool.claude.outputTokens, 25);
+  assert.equal(jsonSummaryV2.byDay["2026-07-01"].byTool.gemini.cacheReadTokens, 20);
+
+  const badSchema = cli(["json", "--schema", "future"], { cwd: installDir, env, allowFailure: true });
+  assert.notEqual(badSchema.status, 0);
+  assert.match(badSchema.stderr, /Unknown --schema/);
 
   const exportPath = join(temp, "signed.json");
   cli(["export", "--out", exportPath, "--pretty"], { cwd: installDir, env });
@@ -140,13 +169,20 @@ try {
   assert.equal(signed.schema, "tokentopper-signed/1");
   assert.equal(signed.payload.tool.version, packageJson.version);
 
-  let received;
+  const exportV2Path = join(temp, "signed-v2.json");
+  cli(["export", "--schema", "2", "--out", exportV2Path], { cwd: installDir, env });
+  const signedV2 = JSON.parse(readFileSync(exportV2Path, "utf8"));
+  assert.equal(signedV2.schema, "tokentopper-signed/1");
+  assert.equal(signedV2.payload.schema, "tokentopper/2");
+  assert.equal(signedV2.payload.byDay["2026-07-01"].sessions, 2);
+
+  const received = [];
   const server = createServer((request, response) => {
     let body = "";
     request.setEncoding("utf8");
     request.on("data", (chunk) => { body += chunk; });
     request.on("end", () => {
-      received = { authorization: request.headers.authorization, body: JSON.parse(body) };
+      received.push({ authorization: request.headers.authorization, body: JSON.parse(body) });
       response.writeHead(200, { "content-type": "application/json" });
       response.end('{"ok":true}');
     });
@@ -159,11 +195,19 @@ try {
       ["sync", "--token", "pack-check-token", "--endpoint", `http://127.0.0.1:${address.port}/usage`],
       { cwd: installDir, env },
     );
+    await cliAsync(
+      ["sync", "--schema", "2", "--token", "pack-check-token", "--endpoint", `http://127.0.0.1:${address.port}/usage`],
+      { cwd: installDir, env },
+    );
   } finally {
     await new Promise((resolvePromise, reject) => server.close((error) => error ? reject(error) : resolvePromise()));
   }
-  assert.equal(received?.authorization, "Bearer pack-check-token");
-  assert.equal(received?.body.schema, "tokentopper-signed/1");
+  assert.equal(received[0]?.authorization, "Bearer pack-check-token");
+  assert.equal(received[0]?.body.schema, "tokentopper-signed/1");
+  assert.equal(received[0]?.body.payload.schema, "tokentopper/1");
+  assert.equal(received[1]?.authorization, "Bearer pack-check-token");
+  assert.equal(received[1]?.body.payload.schema, "tokentopper/2");
+  assert.equal(received[1]?.body.payload.byDay["2026-07-01"].sessions, 2);
 
   console.log(`verified ${packageJson.name}@${packageJson.version} tarball and CLI`);
 } finally {

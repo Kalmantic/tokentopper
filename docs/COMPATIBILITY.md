@@ -125,6 +125,35 @@ The Ed25519 private key stays in `~/.tokentopper/key.json`, created with mode
 `TOKENTOPPER_TOKEN` / `TOKENTOPPER_ENDPOINT` environment variable can override the
 stored configuration.
 
+## Enterprise data handling
+
+TokenTopper's local reader does not require an organization-wide API credential
+and does not modify agent-owned session stores. An enterprise deployment should
+classify the derived aggregate as employee usage telemetry even though it excludes
+prompt and source content.
+
+| Question | Answer |
+| --- | --- |
+| What is read? | The documented usage fields in supported local agent stores; files and SQLite databases are opened locally and read-only |
+| What is derived? | UTC dates, token categories, model/agent totals, sessions, tool calls, cost estimates, run-rate, tier, and Index |
+| What leaves the machine? | Nothing for summary, reports, JSON, or MCP; explicit export writes locally, and explicit sync sends the signed aggregate described above |
+| What direct identifiers are included? | Export/sync includes hostname, OS, pseudonymous machine ID, and signing public key; public JSON excludes machine identity |
+| What content is excluded? | Prompts, responses, source code, repository/file paths, project names, branches, commit messages, and the signing private key |
+| Who controls visibility? | Local is the default; hosted publication and optional location are separate user opt-ins |
+| How should access be revoked? | Remove the hosted device/profile link and CLI token; delete local `config.json` after revocation; rotate/relink after suspected key exposure |
+
+Organizations should define a retention period for hosted daily aggregates, give
+users a deletion/export path, document whether administrators can view private
+usage, and avoid using token volume alone as a productivity or performance score.
+Costs are model-price estimates rather than invoices, and a signature establishes
+installation-key possession rather than the business value or authorship of work.
+
+For managed endpoints, restrict read access to agent session directories, protect
+`~/.tokentopper` with the user's OS account controls, pin the exact package version
+after verifying npm provenance, and route sync only to an approved HTTPS endpoint.
+Review [`THREAT_MODEL.md`](THREAT_MODEL.md) before changing the collection or
+publication boundary.
+
 ## Troubleshooting
 
 ### `Unsupported engine` or syntax errors

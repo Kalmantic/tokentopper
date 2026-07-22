@@ -8,7 +8,7 @@ prove it.
 ## Current baseline
 
 - [x] Publish `tokentopper` on npm.
-- [x] Publish `0.6.1` with the complete Professional AI Usage Index description, Gemini CLI support, and warning-free JSR source as the current provenance-backed verified release.
+- [x] Publish `0.8.0` as the current provenance-backed verified release, with package metadata, documentation, lockfile, tag, and GitHub Release aligned.
 - [x] Document Claude Code, Codex, OpenCode, and Gemini CLI as supported today.
 - [x] Label GitHub Copilot and other untested tools as roadmap items.
 - [ ] Confirm every npm access token exposed during early releases is revoked in the npm account. The repository has no npm token secret and uses OIDC.
@@ -17,10 +17,12 @@ prove it.
 ## P0: make every package verifiable
 
 - [x] Add `typecheck`, `test`, `check`, and `pack:check` package scripts.
+- [x] Validate relative npm README and documentation links before release.
 - [x] Add fixture-based tests for Claude Code, Codex, OpenCode, and Gemini CLI usage parsing.
 - [x] Add CLI smoke tests for `--help`, `--version`, default output, `export`, and a safe mocked `sync`.
 - [x] Test the packed tarball, not only the source tree: run `npm pack`, install it in a temporary directory, and execute its binary.
-- [x] Assert that the tarball contains only `dist`, `README.md`, `LICENSE`, and package metadata.
+- [x] Assert that the tarball contains only `dist`, the portable Agent Skill,
+  `README.md`, `LICENSE`, and package metadata.
 - [x] Validate that package version, CLI version, lockfile version, and release tag agree.
 - [x] Support maintained Node.js LTS lines only: Node.js 22 and 24 are enforced in `engines`, CI, the build target, and documentation.
 
@@ -70,14 +72,20 @@ npm remains the primary channel because it already supports `npx`, global instal
 - [x] Document standalone artifact rollback, removal, credential revocation, and fix-forward handling.
 - [ ] If standalone executables pass evaluation, publish versioned GitHub Release archives plus SHA-256 checksums and an SBOM.
 - [ ] After stable standalone releases exist, add a Homebrew tap for macOS/Linux and Scoop manifests for Windows.
-- [ ] Consider WinGet only after signing and update automation are reliable.
-- [ ] Do not add Docker as an end-user install channel unless a server or CI use case appears; TokenTopper needs access to host-local agent usage files.
-- [ ] Do not add a curl-to-shell installer until artifacts are signed, checksummed, and rollback behavior is documented.
+- [x] Defer WinGet until signing and update automation are reliable.
+- [x] Exclude Docker as an end-user install channel unless a server or CI use case
+  appears; TokenTopper needs access to host-local agent usage files.
+- [x] Exclude a curl-to-shell installer until artifacts are signed, checksummed,
+  and rollback behavior is documented.
 - [x] Document npm as the primary channel and publish its tarball, checksum, and SBOM as audited GitHub Release assets.
 - [x] Document the evidence gate that must be met before standalone executables, Homebrew, or Scoop are adopted.
 - [x] Run a weekly clean-environment smoke test against the live npm artifact through npm install, npx, pinned pnpm dlx, bunx, the Bun runtime, Deno, and the immutable tagged Nix flake.
 - [x] Submit the sandbox-built `tokentopper` expression to Nixpkgs ([NixOS/nixpkgs#543426](https://github.com/NixOS/nixpkgs/pull/543426)).
-- [ ] Track the Nixpkgs pull request through review, merge, and inclusion in `nixpkgs-unstable`.
+- [x] Refresh the repository Nixpkgs expression to the current `0.8.0` tag with
+  source and npm dependency hashes produced by the sandbox-verified release job.
+- [ ] Track the Nixpkgs pull request through review, merge, and inclusion in
+  `nixpkgs-unstable`. As of 2026-07-22 it is still a non-mergeable draft at
+  `0.6.1`, needs the `0.8.0` refresh, human review, and `nixpkgs-review` evidence.
 - [ ] Publish `@openfactoryai/tokentopper` to JSR after the scope owner authorizes the triggering GitHub actor (GitHub issue #14).
 - [x] Make JSR publication idempotent and add public metadata, export checksum, npm-compatibility integrity, and Deno API/CLI verification.
 
@@ -92,7 +100,10 @@ Exit condition: each supported install command is automated, tested in a clean e
 - [ ] Add GitHub Copilot only after GitHub documents a stable token schema for its session files or local session-store database; current public docs expose locations but not that schema.
 - [x] Add a public compatibility document explaining which local files are read and which data can leave the machine.
 - [x] Add privacy-safe release health checks for registry provenance and clean installation across supported runtimes.
-- [ ] Add operational monitoring for sync API errors and opt-in user feedback.
+- [x] Add a credential-free scheduled production health-contract check, an
+  incident runbook, and an explicitly opt-in privacy-safe sync feedback form.
+- [ ] Add authenticated ingestion/rejection metrics and alerts in the private API
+  repository without logging request bodies, tokens, keys, or machine IDs.
 
 ## P5: enterprise security by design
 
@@ -108,21 +119,26 @@ claim below must be enforced by CI or documented, not just intended.
 - [x] Supply chain: OIDC trusted publishing (no reusable npm tokens), provenance
   on every release, pinned Actions, CodeQL, dependency review, secret scanning,
   SBOM + SHA-256 sidecars on release assets, protected release environments.
-- [ ] Add an OpenSSF Scorecard workflow and publish the badge in the README.
-- [ ] Add osv-scanner (or `npm audit` with a signal-only gate) to CI for
+- [x] Add an OpenSSF Scorecard workflow and publish the badge in the README.
+- [x] Add osv-scanner (or `npm audit` with a signal-only gate) to CI for
   known-vulnerability checks on the dependency tree.
-- [ ] Add a `SECURITY.md` with a vulnerability disclosure policy and supported
+- [x] Add a `SECURITY.md` with a vulnerability disclosure policy and supported
   release window.
-- [ ] Publish a short threat model in `docs/`: assets (local usage records,
+- [x] Publish a short threat model in `docs/`: assets (local usage records,
   Ed25519 key, CLI token), trust boundaries (CLI ↔ site, MCP client ↔ server),
   and the exfiltration guarantees CI enforces.
 - [ ] Sign standalone executables (macOS notarization, Windows Authenticode)
   before promoting them to release artifacts (tracked in P3).
-- [ ] Add SLSA provenance attestation for standalone archives.
-- [ ] Document data handling for enterprise buyers in `docs/COMPATIBILITY.md`:
+- [x] Add SLSA provenance attestation for standalone archives.
+- [x] Document data handling for enterprise buyers in `docs/COMPATIBILITY.md`:
   what is read, what is derived, what leaves the machine, retention advice.
 
 ## Recommended execution order
+
+The product gap against CCRank is tracked separately in
+[`docs/CCRANK_PARITY.md`](docs/CCRANK_PARITY.md). Its P0 schema work must land
+before sortable historical or efficiency leaderboards, because `tokentopper/1`
+does not carry signed daily input/output/cache detail.
 
 1. Authorize the existing JSR OIDC workflow at the `@openfactoryai` scope and publish the current version.
 2. Enable GitHub Actions for the API and website repositories at the Kalmantic organization level (GitHub issue #16).

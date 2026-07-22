@@ -1,6 +1,7 @@
 name: OpenSSF Scorecard
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   schedule:
@@ -13,8 +14,12 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
+      checks: read
+      contents: read
       security-events: write
       id-token: write
+      issues: read
+      pull-requests: read
     steps:
       - name: Check out source without persisting credentials
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

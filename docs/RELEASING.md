@@ -22,7 +22,7 @@ TokenTopper releases are prepared by Release Please and published to npm from Gi
    - `fix:` for a patch release;
    - `feat:` for a minor release;
    - `feat!:` or another `!` type for a breaking release. Before `1.0.0`, the repository's Release Please configuration turns this into a minor release.
-2. CI runs `npm run check` on Node.js 22 and 24 across Linux, macOS, and Windows.
+2. CI runs `npm run check` on Node.js 18, 20, 22, 24, and 26 across Linux, macOS, and Windows.
 3. Release Please updates a release PR containing the next version and changelog.
 4. Review and merge the release PR.
 5. The same release workflow creates the Git tag and GitHub Release, checks out the tagged commit, reruns the full package gate, and publishes through npm Trusted Publishing with automatic provenance.

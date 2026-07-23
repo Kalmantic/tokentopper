@@ -9,7 +9,8 @@ or branch names.
 
 | Path | Support | Notes |
 | --- | --- | --- |
-| Node.js 22 and 24 | Supported | Primary runtime and the runtime used by the Nix flake |
+| Node.js 22.13 or newer | Supported, recommended | Full functionality, including OpenCode SQLite. The Nix flake builds on Node.js 24 |
+| Node.js 18, 20, and 22.0–22.12 | Supported with one gap | Everything works except OpenCode SQLite databases; `node:sqlite` needs 22.13+. TokenTopper prints a notice instead of reporting a silently low total. CI covers 18, 20, 22, 24, and 26 |
 | `npx` / global npm install | Supported | Runs the provenance-backed npm artifact |
 | `pnpm dlx` | Supported | Runs the same npm artifact; current pnpm is pinned in live smoke tests |
 | `bunx` | Supported | Runs the npm package executable; `bunx --bun` is also tested |
@@ -158,7 +159,7 @@ publication boundary.
 
 ### `Unsupported engine` or syntax errors
 
-Check `node --version`. TokenTopper supports Node.js 22 and 24. Upgrade Node or use
+Check `node --version`. TokenTopper requires Node.js 18 or newer. Upgrade Node or use
 the repository Nix flake instead of forcing an older Node release.
 
 ### `No AI CLI usage found`
@@ -167,7 +168,9 @@ the repository Nix flake instead of forcing an older Node release.
 2. Check the roots above and any custom `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, or
    `OPENCODE_DATA_DIR`, or `GEMINI_CLI_HOME` value.
 3. Confirm the current user can read those directories and files.
-4. For current OpenCode SQLite data, run TokenTopper with Node.js 22/24 or Bun.
+4. For current OpenCode SQLite data, run TokenTopper with Node.js 22.13 or newer, or
+   with Bun. `node:sqlite` sits behind `--experimental-sqlite` before 22.13, so older
+   Node releases silently fall back to the JSON records only.
 
 One unreadable or malformed source does not stop the other sources; it simply
 contributes no records.

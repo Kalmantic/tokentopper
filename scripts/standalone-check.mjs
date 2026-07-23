@@ -4,6 +4,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, st
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 
 const binary = resolve(process.argv[2] || "");
@@ -114,7 +115,7 @@ function assertPrivate(output) {
 }
 
 try {
-  const packageJson = JSON.parse(readFileSync(resolve(dirname(import.meta.dirname), "package.json"), "utf8"));
+  const packageJson = JSON.parse(readFileSync(resolve(dirname(dirname(fileURLToPath(import.meta.url))), "package.json"), "utf8"));
   const version = await run(["--version"]);
   assert.equal(version.status, 0, version.stderr);
   assert.equal(version.stdout.trim(), packageJson.version);

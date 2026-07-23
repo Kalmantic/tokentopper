@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { chmodSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const archive = resolve(process.argv[2] || "");
 const checksumPath = resolve(process.argv[3] || `${archive}.sha256`);
@@ -65,7 +66,7 @@ try {
 
   const binary = join(directory, process.platform === "win32" ? "tokentopper.exe" : "tokentopper");
   if (process.platform !== "win32") chmodSync(binary, 0o755);
-  const checked = spawnSync(process.execPath, [resolve(import.meta.dirname, "standalone-check.mjs"), binary], {
+  const checked = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), "standalone-check.mjs"), binary], {
     encoding: "utf8",
     stdio: "pipe",
   });

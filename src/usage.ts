@@ -306,6 +306,28 @@ interface SQLiteReader {
   close: () => void;
 }
 
+/* ------------------------------ notices ------------------------------ */
+// Gaps that leave totals understated. A partial read must never be mistaken for
+// a complete one, so the CLI prints these to stderr after collecting records.
+const notices = new Set<string>();
+
+export function usageNotices(): string[] {
+  return [...notices];
+}
+
+// Test-only reset; the CLI reads notices once per process.
+export function clearUsageNotices(): void {
+  notices.clear();
+}
+
+function openCodeDatabaseNotice(error: unknown): string {
+  const code = (error as { code?: string } | null | undefined)?.code;
+  const noDriver = code === "ERR_UNKNOWN_BUILTIN_MODULE" || code === "ERR_MODULE_NOT_FOUND";
+  return noDriver
+    ? "OpenCode SQLite databases were skipped because this runtime has no SQLite driver, so OpenCode totals may be understated. Node.js 22.13 or newer, or Bun, reads them."
+    : "OpenCode SQLite databases could not be read, so OpenCode totals may be understated.";
+}
+
 async function openSQLiteReadOnly(path: string): Promise<SQLiteReader> {
   try {
     const { DatabaseSync } = await import("node:sqlite");
@@ -405,9 +427,12 @@ export async function loadOpenCode(roots = openCodeRoots()): Promise<Rec[]> {
           db.close();
         }
       }
-    } catch {
-      // Deno or older Node builds may not expose a supported SQLite driver.
-      // JSON fallback still works, and other usage sources remain available.
+    } catch (error) {
+      // Deno, Bun-less runtimes, and Node before 22.13 expose no usable SQLite
+      // driver. The JSON fallback above still contributes records and the other
+      // sources are unaffected, but OpenCode keeps current sessions in the
+      // database, so record the gap rather than reporting a silently low total.
+      notices.add(openCodeDatabaseNotice(error));
     }
   }
   return [...records.values()];

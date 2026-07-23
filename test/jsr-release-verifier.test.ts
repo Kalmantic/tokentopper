@@ -3,12 +3,13 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const execFileAsync = promisify(execFile);
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const { version } = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as { version: string };
 const modules = {
   "/src/mod.ts": Buffer.from("export const indexFor = (value: number) => value;\n"),

@@ -4,8 +4,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { DatabaseSync } from "node:sqlite";
-import { loadClaude, loadCodex, loadGemini, loadOpenCode } from "../src/usage";
+import { clearUsageNotices, loadClaude, loadCodex, loadGemini, loadOpenCode, usageNotices } from "../src/usage";
+
+// node:sqlite only exists unflagged from Node 22.13. On older supported runtimes
+// the SQLite fixture cannot be built, so those cases assert the documented
+// degradation instead of being silently dropped.
+const sqlite = await import("node:sqlite").then(
+  (m) => m.DatabaseSync as unknown as new (path: string) => {
+    exec: (sql: string) => void;
+    prepare: (sql: string) => { run: (...params: string[]) => void };
+    close: () => void;
+  },
+  () => null,
+);
 
 function fixtureDir(name: string): string {
   return mkdtempSync(join(tmpdir(), `tokentopper-${name}-`));
@@ -145,7 +156,7 @@ test("Codex reader handles last usage, cumulative deltas, caching, and deduplica
   }
 });
 
-test("OpenCode reader combines JSON and SQLite with database records winning", async () => {
+test("OpenCode reader combines JSON and SQLite with database records winning", { skip: sqlite ? false : "node:sqlite unavailable before Node 22.13" }, async () => {
   const root = fixtureDir("opencode");
   try {
     const messageDir = join(root, "storage", "message", "session-1");
@@ -170,7 +181,7 @@ test("OpenCode reader combines JSON and SQLite with database records winning", a
       tokens: { input: 7, output: 3, total: 12 },
     }));
 
-    const db = new DatabaseSync(join(root, "opencode.db"));
+    const db = new sqlite!(join(root, "opencode.db"));
     db.exec("CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT, data TEXT NOT NULL)");
     db.prepare("INSERT INTO message (id,session_id,data) VALUES (?,?,?)").run(
       "message-1",
@@ -196,6 +207,23 @@ test("OpenCode reader combines JSON and SQLite with database records winning", a
       { model: "gpt-5-codex", sessionId: "session-db", input: 20, output: 5, cacheRead: 3, cacheWrite: 2, costUSD: 0.25 },
     ]);
   } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("OpenCode raises a notice instead of silently understating unreadable databases", async () => {
+  const root = fixtureDir("opencode-notice");
+  clearUsageNotices();
+  try {
+    // Unreadable on every runtime: either no driver at all, or a driver that
+    // rejects the file. Both must surface rather than count as zero.
+    writeFileSync(join(root, "opencode.db"), "not a sqlite database");
+    assert.deepEqual(await loadOpenCode([root]), []);
+    const notices = usageNotices();
+    assert.equal(notices.length, 1);
+    assert.match(notices[0]!, /OpenCode totals may be understated/);
+  } finally {
+    clearUsageNotices();
     rmSync(root, { recursive: true, force: true });
   }
 });

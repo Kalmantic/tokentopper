@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const jsrConfig = JSON.parse(readFileSync(resolve(root, "jsr.json"), "utf8"));
 const expectedVersion = process.argv[2];
 const statusOnly = process.argv[3] === "--status";

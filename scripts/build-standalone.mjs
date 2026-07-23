@@ -1,11 +1,12 @@
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 if (typeof Bun === "undefined") {
   throw new Error("standalone builds require the pinned Bun runtime");
 }
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const { version } = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const os = { darwin: "macos", linux: "linux", win32: "windows" }[process.platform];
 const arch = { arm64: "arm64", x64: "x64" }[process.arch];

@@ -4,10 +4,11 @@ import { createHash } from "node:crypto";
 import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { after, before, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const fixtureRoot = mkdtempSync(join(tmpdir(), "tokentopper-release-operations-"));
 
 function run(command: string, args: string[], env = process.env) {

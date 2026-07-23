@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
-import { collectAll } from "./usage";
+import { collectAll, usageNotices } from "./usage";
 import {
   aggregate,
   aggregateV2,
@@ -84,6 +84,11 @@ async function build(schema: 1 | 2 = 1): Promise<Aggregate | AggregateV2 | null>
   if (recs.length === 0) return null;
   const now = Date.now();
   return schema === 2 ? aggregateV2(recs, VERSION, now) : aggregate(recs, VERSION, now);
+}
+
+// Notices go to stderr so they never contaminate `json`/`export` stdout.
+function printNotices(): void {
+  for (const notice of usageNotices()) console.error(dim(`Note: ${notice}`));
 }
 
 function noData(): never {
@@ -513,11 +518,13 @@ async function main(): Promise<void> {
 
   if ((REPORTS as readonly string[]).includes(command)) {
     const recs = await collectAll();
+    printNotices();
     if (recs.length === 0) noData();
     return doReport(command as ReportCommand, recs);
   }
 
   const recs = await collectAll();
+  printNotices();
   if (recs.length === 0) noData();
   const now = Date.now();
   const agg = aggregate(recs, VERSION, now);

@@ -1,9 +1,10 @@
 import { rmSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outdir = resolve(root, "dist");
 
 rmSync(outdir, { recursive: true, force: true });
@@ -13,10 +14,10 @@ await build({
   bundle: true,
   platform: "node",
   format: "esm",
-  target: "node22",
+  target: "node18",
   external: ["bun:sqlite"],
   sourcemap: false,
   legalComments: "none",
 });
 
-console.log("built dist/cli.js for Node.js 22+");
+console.log("built dist/cli.js for Node.js 18+");

@@ -64,7 +64,9 @@ included in the aggregate. Nothing is uploaded unless you explicitly run
 
 ## Install and run
 
-TokenTopper supports the maintained Node.js 22 and 24 LTS lines. Run the current release without installing it:
+TokenTopper runs on Node.js 18 or newer, including the current release line. Node.js
+22.13+ is recommended: it is the first release that reads OpenCode's SQLite databases,
+which hold current OpenCode sessions. Run the current release without installing it:
 
 ```sh
 npx tokentopper@latest            # your run-rate, tier, and Index

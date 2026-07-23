@@ -13,14 +13,14 @@
     "LICENSE"
   ],
   "engines": {
-    "node": "^22.0.0 || ^24.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
     "workflow:check": "node scripts/workflow-security-check.mjs",
     "docs:check": "node scripts/docs-check.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test test/*.test.ts",
+    "test": "node scripts/run-tests.mjs",
     "pack:check": "npm run build && node scripts/pack-check.mjs",
     "release:assets": "node scripts/build-release-assets.mjs",
     "release:verify-assets": "node scripts/verify-github-release-assets.mjs",

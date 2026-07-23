@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.9.0...tokentopper-v0.10.0) (2026-07-23)
+
+
+### Features
+
+* support Node.js 18 and newer ([#72](https://github.com/Kalmantic/tokentopper/issues/72)) ([e4dc75d](https://github.com/Kalmantic/tokentopper/commit/e4dc75dc9bce39f6306e788b0cd63f4e5629e6fc))
+
 ## [0.9.0](https://github.com/Kalmantic/tokentopper/compare/tokentopper-v0.8.0...tokentopper-v0.9.0) (2026-07-22)
 
 
